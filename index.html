@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#1e3a5f"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Escala Plantão - Sistema de Gestão"/>
+<title>Escala Plantão - Sistema de Gestão</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<script>window.__ESCALA_BUILD__="2026-06-07-network-first-v19";</script>
+<link rel="manifest" href="manifest-gestao.webmanifest?v=1"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="stylesheet" href="css/modulos/00-base.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/01-navbar.css?v=2"/>
+<link rel="stylesheet" href="css/modulos/02-layout-cadastro.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/03-titulos-paineis.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/04-secao01-efetivo.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/05-secao02-resumo.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/06-escala-interacoes.css?v=1"/>
+<link rel="stylesheet" href="css/modulos/07-popovers.css?v=2"/>
+<link rel="stylesheet" href="css/modulos/08-secao03-escala.css?v=5"/>
+<link rel="stylesheet" href="css/modulos/09-popover-abrir.css?v=2"/>
+<script>try{document.documentElement.classList.add('s03-refresh-guard');}catch(e){}</script>
+<style>html.s03-refresh-guard #escalaWrap{visibility:hidden!important}</style>
+<script>
+(function() {
+  const SESSION_KEY = "escala_auth_session";
+  const ENTRY_KEY = "escala_auth_entry";
+  const AUTH_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
+  const nav = performance.getEntriesByType?.("navigation")?.[0];
+  const isReload = nav ? nav.type === "reload" : performance.navigation?.type === 1;
+  
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (!stored) {
+      window.location.href = "login.html";
+      return;
+    }
+    
+    const data = JSON.parse(stored);
+    const now = Date.now();
+    
+    if (now - data.timestamp > AUTH_TIMEOUT) {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(ENTRY_KEY);
+      window.location.href = "login.html";
+      return;
+    }
+
+    if (!isReload && !sessionStorage.getItem(ENTRY_KEY)) {
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.href = "login.html";
+      return;
+    }
+
+    sessionStorage.removeItem(ENTRY_KEY);
+  } catch (e) {
+    window.location.href = "login.html";
+  }
+})();
+</script>
+
+</head>
+<body class="force-ppf turno-diurno aba-escala-ativa">
+<header class="topo-unico" id="mainHeader">
+<section aria-label="Navegação principal" class="topo-secao topo-esquerda">
+<div class="tabs topo-tabs">
+<button class="top-tab active" id="tabEscala" type="button">ESCALA</button>
+<button class="top-tab" id="tabServidores" type="button">CADASTRO</button>
+</div>
+</section>
+<section aria-label="Informações do plantão" class="topo-secao topo-centro">
+<div class="topo-centro-box">
+<div class="topo-date-group">
+<input class="topo-date-picker" id="topoDatePicker" title="Data da escala" type="date" readonly tabindex="-1"/>
+<span class="topo-dia-semana" id="topoDiaSemana"></span>
+</div>
+<span class="topo-plantao-box" id="topoPlantaoDia"></span>
+<button class="topo-fullscreen-btn" id="btnFullscreenEscala" title="Tela cheia" type="button">⛶</button>
+</div>
+</section>
+<section aria-label="Ações de arquivo" class="topo-secao topo-direita">
+<button class="hdr-btn topo-action-btn" id="btnNovoTop" type="button">NOVO</button>
+<button class="hdr-btn topo-action-btn" id="btnAbrirTop" type="button">ABRIR</button>
+<button class="hdr-btn topo-action-btn is-disabled" id="btnGravarTop" type="button" disabled>GRAVAR</button>
+<div class="topo-menu-wrap">
+<button class="hdr-btn topo-action-btn" id="btnOutrosTop" type="button" aria-expanded="false" aria-haspopup="menu">OUTROS</button>
+<div class="topo-outros-menu" id="menuOutrosTop" role="menu" aria-hidden="true">
+<button class="topo-outros-item" id="btnImportarTop" type="button" role="menuitem">IMPORTAR</button>
+<button class="topo-outros-item" id="btnExportarTop" type="button" role="menuitem">EXPORTAR</button>
+<button class="topo-outros-item" id="btnDuplicarTop" type="button" role="menuitem">DUPLICAR</button>
+<button class="topo-outros-item" id="btnEditarTop" type="button" role="menuitem" hidden>EDITAR</button>
+<button class="topo-outros-item btn-excluir-plantao" id="btnExcluirTop" type="button" role="menuitem">EXCLUIR</button>
+</div>
+</div>
+</section>
+</header>
+<div id="previa-overlay">
+<div id="previa-toolbar">
+<span id="previa-title">Prévia de Impressão</span>
+<div id="previa-toolbar-btns">
+<div class="previa-zoom" aria-label="Zoom da prévia">
+<button class="previa-zoom-btn" id="previaZoomMenos" type="button" title="Diminuir zoom">−</button>
+<span id="previaZoomLabel">100%</span>
+<button class="previa-zoom-btn" id="previaZoomMais" type="button" title="Aumentar zoom">+</button>
+<button class="previa-zoom-btn previa-zoom-reset" id="previaZoomReset" type="button" title="Ajustar à tela">⤢</button>
+</div>
+<button class="previa-btn previa-btn-cancel" id="btn-imprimir-cancelar" type="button">✕ CANCELAR</button>
+<button class="previa-btn previa-btn-print" id="btn-imprimir-exec" type="button">▣ IMPRIMIR</button>
+</div>
+</div>
+<div id="previa-content">
+<aside id="previa-sidebar">
+<button class="previa-side-btn active" data-imp="escala" id="previa-tab-escala" type="button">ESCALA DE SERVIÇO</button>
+<button class="previa-side-btn" data-imp="lista" id="previa-tab-lista" type="button">LISTA DE PRESENÇA</button>
+</aside>
+<main id="previa-frame-wrap">
+<iframe id="previa-frame" srcdoc=""></iframe>
+</main>
+</div>
+</div>
+<div id="escalaWrap">
+<div class="ws">
+<div class="lp lp-v9-efetivo">
+<div class="panel-header-v9 efetivo-header-v9">
+<div class="panel-num-v9 blue">1</div>
+<span class="panel-title-v9">EFETIVO</span>
+<div aria-label="Força" class="efetivo-force-v9">
+<button class="lp-force-btn lp-force-ppf nb-forca-btn-v9 ppf active" data-force="ppf" type="button">PPF</button>
+<button class="lp-force-btn lp-force-fpn nb-forca-btn-v9 fpn" data-force="fpn" type="button">FPN</button>
+</div>
+</div>
+<div aria-label="Filtros do efetivo" class="efetivo-filtros-v9">
+<button class="srv-filtro-v9 active" data-status="presente" type="button">PRESENTES</button>
+<button class="srv-filtro-v9" data-status="ausente" type="button">AUSENTES</button>
+<button class="srv-filtro-v9" data-status="permuta" type="button">PERMUTAS</button>
+<button class="srv-filtro-v9" data-status="extra" type="button">EXTRAS</button>
+<button class="srv-filtro-v9" data-status="todos" type="button">TODOS</button>
+</div>
+<div class="efetivo-filter-gap">
+<span class="efetivo-filter-msg" id="efetivoFiltroMsg"></span>
+<button class="efetivo-filter-clear" id="btnEfetivoLimparFiltro" type="button" aria-label="Remover lista filtrada">×</button>
+</div>
+<table class="eft secao01-tabela-canonica" id="tabelaEfetivoCanonica">
+<colgroup>
+<col class="col-num"/>
+<col class="col-sit"/>
+<col class="col-nome"/>
+<col class="col-d"/>
+<col class="col-n"/>
+<col class="col-obs"/>
+<col class="col-id"/>
+<col class="col-tipo"/>
+<col class="col-turno"/>
+</colgroup>
+<thead>
+<tr><th class="cn">#</th>
+<th class="st">SIT.</th>
+<th class="nm">NOME</th>
+<th class="su">D</th>
+<th class="mo">N</th>
+<th class="ob">OBS</th>
+<th class="hidden-logica">ID</th>
+<th class="hidden-logica">TIPO</th>
+<th class="hidden-logica">TURNO</th>
+</tr>
+</thead>
+<tbody id="eftCanonicoBody">
+</tbody>
+</table><div class="eft-extra-wrap">
+<button class="eft-extra-btn" id="btnIncluirExtra" type="button">＋ INCLUIR PRESENÇA EXTRA</button>
+<span class="eft-extra-gap" aria-hidden="true"></span>
+<button class="eft-extra-btn eft-recorrentes-btn" id="btnRecorrentes" type="button">RECORRENTES</button>
+</div>
+</div>
+<section class="secao02"><header class="s02-title"><span class="s02-badge">2</span><span class="s02-title-text">INFORMAÇÕES</span><button class="s02-toggle" id="btnS02Toggle" title="Recolher / Expandir" aria-expanded="true">◀</button></header>
+<div class="s02-content">
+<div class="force-block force-ppf">
+<div class="force-summary">
+<div class="force-summary-head">PPF</div>
+<div class="force-stats-main">
+<div class="force-stat"><div class="stat-value stat-day">☀ 23</div><div class="stat-label">DIURNO</div></div>
+<div class="force-stat"><div class="stat-value stat-night">☾ 24</div><div class="stat-label">NOTURNO</div></div>
+</div>
+<div class="force-stats-mini">
+<div class="force-mini"><div class="stat-value stat-aus">06</div><div class="stat-label">AUSENTES</div></div>
+<div class="force-mini"><div class="stat-value stat-perm">02</div><div class="stat-label">PERMUTAS</div></div>
+<div class="force-mini"><div class="stat-value stat-extra">00</div><div class="stat-label">EXTRAS</div></div>
+</div>
+</div>
+<div class="resp-card">
+<div class="resp-title"><span>RESPONSÁVEIS DE POSTO</span><button class="resp-title-action">⊞</button></div>
+<table class="resp-table"><tbody></tbody></table>
+</div>
+</div>
+<div class="force-block force-fpn">
+<div class="force-summary">
+<div class="force-summary-head">FPN</div>
+<div class="force-stats-main">
+<div class="force-stat"><div class="stat-value stat-day">☀ 06</div><div class="stat-label">DIURNO</div></div>
+<div class="force-stat"><div class="stat-value stat-night">☾ 06</div><div class="stat-label">NOTURNO</div></div>
+</div>
+<div class="force-stats-mini">
+<div class="force-mini"><div class="stat-value stat-aus">00</div><div class="stat-label">AUSENTES</div></div>
+<div class="force-mini"><div class="stat-value stat-perm">00</div><div class="stat-label">PERMUTAS</div></div>
+<div class="force-mini"><div class="stat-value stat-extra">00</div><div class="stat-label">EXTRAS</div></div>
+</div>
+</div>
+<div class="resp-card">
+<div class="resp-title"><span>RESPONSÁVEIS DE POSTO</span><button class="resp-title-action">⊞</button></div>
+<table class="resp-table"><tbody></tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<section class="secao03" id="secao03">
+<div class="s03-title">
+<div class="s03-title-left"><span class="s03-badge">3</span><span class="s03-title-text">ESCALAS DE SERVIÇO</span></div>
+</div>
+<div class="s03-toolbar">
+<div class="s03-tool-group s03-tool-turnos">
+<button class="s03-btn turno day active">DIURNO</button><button class="s03-btn turno night">NOTURNO</button><button class="s03-btn turno all">TODOS</button>
+</div>
+<div class="s03-tool-group s03-tool-edicao">
+<!-- LEGADO COMENTADO: botões antigos de alocação/lista/coluna substituídos por dropdown padrão + modo EDITAR.
+<button class="s03-btn s03-action-btn s03-alocar" data-s03-tool="alocar" title="Alocar"><span class="s03-action-icon">☺+</span><span>ALOCAR</span></button><button class="s03-btn s03-action-btn s03-lista" data-s03-tool="lista" title="Lista"><span class="s03-action-icon">▾</span><span>LISTA</span></button><button class="s03-btn s03-action-btn" data-s03-tool="mover" title="Mover"><span class="s03-action-icon">↔</span><span>MOVER</span></button><button class="s03-btn s03-action-btn" data-s03-tool="copiar" title="Copiar"><span class="s03-action-icon">⧉</span><span>COPIAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="limpar" title="Limpar"><span class="s03-action-icon">⌫</span><span>LIMPAR</span></button>
+--><button class="s03-btn s03-action-btn s03-editar" data-s03-tool="editar" title="Editar seleção Excel-like"><span class="s03-action-icon">✎</span><span>EDITAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="recortar" title="Recortar seleção"><span class="s03-action-icon">✂</span><span>RECORTAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="copiar" title="Copiar seleção"><span class="s03-action-icon">⧉</span><span>COPIAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="colar" title="Colar"><span class="s03-action-icon">⤓</span><span>COLAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="limpar" title="Limpar seleção"><span class="s03-action-icon">⌫</span><span>LIMPAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="repetir" title="Repetir seleção"><span class="s03-action-icon">↦</span><span>REPETIR</span></button>
+</div>
+<div class="s03-tool-group s03-tool-saida">
+<button class="s03-btn s03-output-btn print-escala-btn" id="btnPreviewPrint" title="Imprimir"><span class="s03-action-icon">▣</span><span>IMPRIMIR</span></button><button class="s03-btn s03-output-btn" id="btnConfigEscalas" title="Configurações"><span class="s03-action-icon">⚙</span><span>CONFIG.</span></button>
+</div>
+</div>
+<div class="s03-content">
+<div class="s03-card s03-card-t2">
+<div class="s03-banner s03-banner-t2"><span>POSTOS EXTERNOS | DIURNO</span><button class="s03-banner-x">×</button></div>
+<table class="s03-table t2-table" id="tbl-T2">
+<colgroup><col class="t2-col-posto"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/></colgroup>
+<thead><tr><th>POSTO</th><th>08:00-10:00</th><th>10:00-12:00</th><th>12:00-14:00</th><th>14:00-16:00</th><th>16:00-18:00</th><th>18:00-20:00</th></tr></thead>
+<tbody>
+<tr class="grupo-start destaque-linha"><td class="posto-cell" rowspan="5">P1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start destaque-linha"><td class="posto-cell" rowspan="3">P2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<div class="s03-card s03-card-t3 t3-card">
+<div class="s03-banner s03-banner-t3"><span>VIVÊNCIAS | DIURNO</span><button class="s03-banner-x">×</button></div>
+<table class="s03-table t3-table" id="tbl-T3">
+<colgroup><col/><col/><col/><col/><col/></colgroup>
+<thead><tr><th>VIV. ALFA</th><th>VIV. BRAVO</th><th>VIV. CHARLIE</th><th>VIV. DELTA</th><th>IN/TR/SAU</th></tr><tr><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th></tr></thead>
+<tbody>
+<tr class="destaque-linha"><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<div class="s03-card s03-card-noturno">
+<div class="s03-banner s03-banner-t4 turno-noturno"><span>POSTOS EXTERNOS | NOTURNO</span><button class="s03-banner-x">×</button></div>
+<table class="s03-table t4-table turno-noturno" id="tbl-T4">
+<colgroup>
+<col class="t4-col-posto"/>
+<col class="t4-zebra-a"/><col class="t4-zebra-a"/>
+<col class="t4-zebra-b"/><col class="t4-zebra-b"/>
+<col class="t4-zebra-a"/><col class="t4-zebra-a"/>
+<col class="t4-zebra-b"/><col class="t4-zebra-b"/>
+</colgroup>
+<thead>
+<tr class="t4-head-grupos">
+<th class="t4-th-posto" rowspan="2">POSTO</th>
+<th colspan="2">20:00-23:00</th>
+<th colspan="2">23:00-02:00</th>
+<th colspan="2">02:00-05:00</th>
+<th colspan="2">05:00-08:00</th>
+</tr>
+<tr class="t4-head-slots">
+<th>20:00-21:30</th>
+<th>21:30-23:00</th>
+<th>23:00-00:30</th>
+<th>00:30-02:00</th>
+<th>02:00-03:30</th>
+<th>03:30-05:00</th>
+<th>05:00-06:30</th>
+<th>06:30-08:00</th>
+</tr>
+</thead>
+<tbody>
+<tr class="grupo-start"><td class="posto-cell" rowspan="5">P1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell" rowspan="3">P2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T3</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="grupo-start"><td class="posto-cell">T4</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<div class="s03-card s03-card-t5">
+<div class="s03-banner s03-banner-t5 turno-noturno"><span>VIVÊNCIAS | NOTURNO</span><button class="s03-banner-x">×</button></div>
+<table class="s03-table t5-table turno-noturno" id="tbl-T5">
+<colgroup><col/><col/><col/><col/><col/></colgroup>
+<thead><tr><th>VIV. ALFA</th><th>VIV. BRAVO</th><th>VIV. CHARLIE</th><th>VIV. DELTA</th><th>IN/TR/SAU</th></tr><tr><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th></tr></thead>
+<tbody>
+<tr><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</div>
+<div id="servidoresPage">
+<div class="sv-layout">
+<aside class="sv-sidebar">
+<div class="sv-form" id="svForm">
+<div class="sv-card">
+<div class="sv-card-title"><span class="sv-num">1</span>DADOS PESSOAIS</div>
+<div class="sv-card-body">
+<div class="sv-grid-2">
+<label class="sv-field"><select id="svForca"><option disabled="" hidden="" value="">FORÇA*</option><option selected="">PPF</option><option>FPN</option></select></label>
+<label class="sv-field"><input id="svMatricula" maxlength="20" placeholder="MATRÍCULA*" type="text"/></label>
+</div>
+<label class="sv-field"><input id="svNome" maxlength="80" placeholder="NOME COMPLETO*" type="text"/></label>
+<div class="sv-grid-2">
+<label class="sv-field"><input id="svNomeCurto" maxlength="20" placeholder="NOME CURTO*" type="text"/></label>
+<label class="sv-field" id="svStatusWrap"><select id="svStatus"><option disabled="" hidden="" selected="" value="">STATUS</option><option>ATIVO</option><option>INATIVO</option></select></label>
+</div>
+<span id="svId" hidden=""></span>
+</div>
+</div>
+<div class="sv-card">
+<div class="sv-card-title"><span class="sv-num">2</span>APOIO FIXO NA SEGURANÇA<button class="sv-clear" data-clear="2" type="button">× LIMPAR 2·3·4·5</button></div>
+<div class="sv-card-body">
+<div class="sv-grid-3">
+<label class="sv-field"><select id="svPlantao"><option disabled="" hidden="" selected="" value="">PLANTÃO*</option><option>ALFA</option><option>BRAVO</option><option>CHARLIE</option><option>DELTA</option></select></label>
+<label class="sv-field"><select id="svTurno"><option disabled="" hidden="" selected="" value="">TURNO*</option><option>24H</option><option>DIURNO</option><option>NOTURNO</option></select></label>
+<label class="sv-field"><select id="svSetor"><option disabled="" hidden="" selected="" value="">SETOR*</option><option>DISED</option><option>DIREB</option><option>DIPF</option></select></label>
+</div>
+</div>
+</div>
+<div class="sv-card">
+<div class="sv-card-title"><span class="sv-num">3</span>PRESENÇA EXTRA NO PLANTÃO<button class="sv-clear" data-clear="3" type="button">× LIMPAR</button><button class="sv-toggle" data-toggle="3" disabled="" id="svToggle3" title="Expandir / Recolher" type="button">▼</button></div>
+<div class="sv-card-body sv-collapsible" id="svBody3" style="display:none;">
+<div class="sv-extra-grid">
+<label class="sv-field"><select id="svMotivoApoio"><option disabled="" hidden="" selected="" value="">MOTIVO*</option><option>APOIO</option><option>COMPENSACAO</option></select></label>
+<label class="sv-field"><select id="svJornada"><option disabled="" hidden="" selected="" value="">JORNADA*</option><option>24H</option><option>DIURNO</option><option>NOTURNO</option></select></label>
+<label class="sv-field"><input id="svHorario" maxlength="13" inputmode="numeric" placeholder="00:00-00:00" type="text"/></label>
+</div>
+<div class="sv-rec-control" id="svRecControl">
+<input id="svRecorrente" type="checkbox"/>
+<label for="svRecorrente">RECORRENTE</label>
+<span></span>
+<label class="sv-rec-field is-hidden" for="svRecGrupo">GRUPO</label>
+<select class="sv-rec-field is-hidden" id="svRecGrupo"><option value="">GRUPO</option></select>
+<button class="sv-rec-add sv-rec-field is-hidden" id="svRecAdd" type="button">+</button>
+</div>
+<div class="sv-rec-editor is-hidden" id="svRecEditor">
+<input id="svRecNomeGrupo" placeholder="NOME DO GRUPO" type="text"/>
+<button id="svRecSalvarGrupo" type="button" disabled title="Gravar grupo">▣</button>
+</div>
+<div class="sv-rec-banner is-hidden" id="svRecBanner">PRESENCA EXTRA RECORRENTE</div>
+<table class="sv-rec-table is-hidden" id="svRecTable">
+<colgroup><col class="sv-rec-col-pres"/><col class="sv-rec-col-grupo"/><col class="sv-rec-col-edicao"/></colgroup>
+<thead><tr><th>PRES.</th><th>GRUPO</th><th>EDICAO</th></tr></thead>
+<tbody id="svRecTbody"></tbody>
+</table>
+</div>
+</div>
+<div class="sv-card">
+<div class="sv-card-title"><span class="sv-num">4</span>AUSÊNCIAS<button class="sv-clear" data-clear="4" type="button">× LIMPAR</button><button class="sv-toggle" data-toggle="4" disabled="" id="svToggle4" title="Expandir / Recolher" type="button">▼</button></div>
+<div class="sv-card-body sv-collapsible" id="svBody4" style="display:none;">
+<div class="sv-grid-2">
+<label class="sv-field"><select id="svMotivoAusencia"><option disabled="" hidden="" selected="" value="">MOTIVO AUSÊNCIA*</option><option>ATESTADO</option><option>COMPENSACAO</option><option>FERIAS</option><option>LICENCA</option><option>MISSAO</option><option>OUTROS</option><option>PERMUTA</option></select></label>
+<label class="sv-field" id="svSubstitutoWrap"><select id="svSubstituto"><option disabled="" hidden="" selected="" value="">SUBSTITUTO*</option></select></label>
+</div>
+<label class="sv-field"><input id="svInfoAusencia" maxlength="30" placeholder="INFORMAÇÃO AUSÊNCIA" type="text"/></label>
+</div>
+</div>
+<div class="sv-card" id="svSec5" hidden="">
+<div class="sv-card-title"><span class="sv-num">5</span>PGTO DE PERMUTA</div>
+<div class="sv-card-body">
+<div class="sv-grid-2">
+<div class="sv-field sv-field-label"><span class="sv-label-caption">SUBSTITUINDO</span><span class="sv-label-value" id="svPgtoSubstituindo">—</span></div>
+<div class="sv-field sv-field-label"><span class="sv-label-caption">PLANTÃO DO PGTO</span><span class="sv-label-value" id="svPgtoPlantao">—</span></div>
+</div>
+<label class="sv-field"><select id="svStatusPgto"><option disabled="" hidden="" selected="" value="">STATUS DO PAGAMENTO*</option><option value="PRESENTE">PRESENTE</option><option value="AUSENTE">AUSENTE</option></select></label>
+</div>
+</div>
+<div class="sv-bottom-actions">
+<button class="sv-crud-btn novo" id="svBtnNovo" type="button">NOVO</button>
+<button class="sv-crud-btn gravar" id="svBtnGravar" type="button">GRAVAR</button>
+<button class="sv-crud-btn remover" id="svBtnRemover" type="button">REMOVER</button>
+</div>
+<div class="sv-msg" id="svMsg"></div>
+</div>
+</aside>
+<main class="sv-content">
+<div class="sv-title">
+<span class="s03-badge">C</span>
+<span class="s03-title-text">CADASTRO DE SERVIDORES</span>
+</div>
+<div class="sv-toolbar">
+<div class="sv-search-wrap">
+<span class="sv-search-icon" aria-hidden="true">⌕</span>
+<input id="svBusca" placeholder="Buscar por nome, matrícula, plantão ou força" type="text"/>
+</div>
+<select id="svFiltroStatus">
+<option value="">STATUS: TODOS</option>
+<option selected="">ATIVO</option>
+<option>INATIVO</option>
+</select>
+<select id="svFiltroForca">
+<option value="">FORÇA: TODAS</option>
+<option>PPF</option>
+<option>FPN</option>
+</select>
+<select id="svFiltroPlantao">
+<option value="">PLANTÃO: TODOS</option>
+<option>ALFA</option>
+<option>BRAVO</option>
+<option>CHARLIE</option>
+<option>DELTA</option>
+</select>
+<button id="svBuscaClear" type="button">LIMPAR</button>
+<span id="svCount">137 registros</span>
+</div>
+<div class="sv-table-wrap">
+<table class="sv-table">
+<colgroup>
+<col class="c-id"/><col class="c-mat"/><col class="c-nome"/><col class="c-curto"/><col class="c-forca"/><col class="c-status"/><col class="c-plantao"/><col class="c-turno"/><col class="c-setor"/><col class="c-motivo"/><col class="c-jornada"/><col class="c-horario"/><col class="c-aus"/><col class="c-sub"/><col class="c-pgto"/><col class="c-idpgto"/><col class="c-statuspgto"/>
+</colgroup>
+<thead>
+<tr>
+<th>ID</th><th>MATRÍCULA</th><th>NOME COMPLETO</th><th>NOME CURTO</th><th>FORÇA</th><th>STATUS</th><th>PLANTÃO</th><th>TURNO</th><th>SETOR</th><th>MOT. PRES.</th><th>JORNADA</th><th>HORÁRIO</th><th>MOT. AUS.</th><th>SUBSTITUTO</th><th>PLANTÃO PGTO</th><th>ID PGTO</th><th>STATUS PGTO</th>
+</tr>
+</thead>
+<tbody id="svTbody">
+<tr data-id="001"><td>001</td><td>3295362</td><td>ADRIANO CORREIA CELESTINO</td><td><b>ADRIANO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="002"><td>002</td><td>23599480</td><td>ALAN VITOR DA SILVA SANTOS</td><td><b>ALAN</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="003"><td>003</td><td>1875074</td><td>ALEXANDRE GALVAO</td><td><b>GALVAO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="004"><td>004</td><td>1772697</td><td>ALINE RAQUEL BEZERRA DE MEDEROS VAZ CARNEIRO</td><td><b>RAQUEL</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="005"><td>005</td><td>115778431</td><td>ALLYSON KYLDRE FERREIRA</td><td><b>ALLYSON</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="006"><td>006</td><td>19654626</td><td>ANDRE LUIZ GUEDES</td><td><b>ANDRE</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="007"><td>007</td><td>2133994</td><td>ANDRE FELIPE MACHADO BARBOSA</td><td><b>BARBOSA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="008"><td>008</td><td>3123263</td><td>ANDREY MONTENEGRO ESCARIAO</td><td><b>ESCARIAO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="009"><td>009</td><td>3293682</td><td>ANTONIO MAYKON SARAIVA SANTIAGO</td><td><b>MAYKON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="010"><td>010</td><td>1773589</td><td>ARISTOTELES GOMES C. FILHO</td><td><b>ARISTOTELES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="011"><td>011</td><td>41961218</td><td>ARLON CARLOS DOS SANTOS</td><td><b>ARLON</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="012"><td>012</td><td></td><td>AURELIO DE FREITAS CAVALCANTE NETO</td><td><b>CAVALCANTE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="013"><td>013</td><td>1563047</td><td>BRUNO LUIZ MEIRA LIMA GUERRA</td><td><b>B GUERRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="014"><td>014</td><td>1000842</td><td>CAIO CESAR DIONISIO SANTOS</td><td><b>CESAR</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="015"><td>015</td><td>1743907</td><td>CARLOS BRUNO ARAUJO DA SILVA</td><td><b>C BRUNO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="016"><td>016</td><td>3295065</td><td>CARLOS EMANUEL VIEIRA PONTES</td><td><b>PONTES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="017"><td>017</td><td>1773605</td><td>CARLOS SANTA BRIGIDA</td><td><b>CARLOS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="018"><td>018</td><td>9692716</td><td>RAFAEL CHAGAS DE LIMA</td><td><b>CHAGAS</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="019"><td>019</td><td>1772810</td><td>CHRISTIANNE MOREIRA FURTADO BARBOSA</td><td><b>CHRISTIANNE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="020"><td>020</td><td>2218730</td><td>CLIF ANDERSON BARROCA CHAVARRIA</td><td><b>CLIF</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="021"><td>021</td><td>1631764</td><td>CLODOALDO SILVA FERREIRA</td><td><b>CLODOALDO</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="022"><td>022</td><td>1546161</td><td>CRISTIAN VEIGA DANTAS</td><td><b>CRISTIAN</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="023"><td>023</td><td>1738016</td><td>CRISTIANO MONTEIRO DE OLIVEIRA</td><td><b>CRISTIANO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>MISSAO</td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="024"><td>024</td><td>3001400398</td><td>DUAN CUNHA DA SILVA</td><td><b>CUNHA</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="025"><td>025</td><td>1772806</td><td>DAMIAO RODRIGUES DA SILVA</td><td><b>DAMIAO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="026"><td>026</td><td>1773670</td><td>DAVI SOMBRA DA SILVEIRA</td><td><b>DAVI</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="027"><td>027</td><td>3141129</td><td>DEOMAR DOS SANTOS PINTO</td><td><b>D SANTOS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="028"><td>028</td><td>1546254</td><td>DIANA MARA CRUZ LIMA</td><td><b>DIANA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="029"><td>029</td><td>2356252</td><td>DIEGO HOLANDA PORTELA MACIEL</td><td><b>HOLANDA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="030"><td>030</td><td>1773058</td><td>DOUGLAS SILVA ALCOCBA</td><td><b>DOUGLAS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="031"><td>031</td><td>111860542</td><td>EDEVALDO RODRIGUES COITO</td><td><b>E RODRIGUES</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="032"><td>032</td><td>1737266</td><td>EDIMAR DA CRUZ</td><td><b>EDIMAR</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="033"><td>033</td><td>3294822</td><td>EDSON GUEDES DA SILVA JUNIOR</td><td><b>E GUEDES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="034"><td>034</td><td>1736971</td><td>ELIZABETE FERNANDES DA SILVA</td><td><b>ELIZABETE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>NOTURNO</td><td>DIREB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="035"><td>035</td><td>1875073</td><td>EMANOEL SANTOS MARCHESINI</td><td><b>MARCHESINI</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="036"><td>036</td><td>43003166</td><td>EDUARDO ERIC BARROS MAIA</td><td><b>ERIC</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="037"><td>037</td><td>1351927</td><td>ERIC MURILO CORREIA DE MACEDO</td><td><b>MURILO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="038"><td>038</td><td>1546183</td><td>EVALDO SANTOS ROCHA</td><td><b>SANTOS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="039"><td>039</td><td>1773446</td><td>EVERTON GUIMARAES DA BOA HORA</td><td><b>EVERTON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="040"><td>040</td><td>28716</td><td>JOSIELSON FABRICIO</td><td><b>FABRICIO</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="041"><td>041</td><td>1772776</td><td>FELIPHE COSTA FERREIRA</td><td><b>FELIPHE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="042"><td>042</td><td>1736939</td><td>FELLIPE CAVALCANTE ROLIM</td><td><b>ROLIM</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="043"><td>043</td><td>1773532</td><td>FRANCISCO HERMES DE OLIVEIRA SOBRINHO</td><td><b>SOBRINHO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="044"><td>044</td><td>2358603</td><td>FRANCISCO IGOR DE OLIVEIRA SA</td><td><b>SA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="045"><td>045</td><td>2138614</td><td>FRANCISCO JEAN TAVARES DE SOUZA</td><td><b>FRANCISCO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="046"><td>046</td><td>1780753</td><td>FRANCISCO KLEBER NEGREIROS MONTE SILVA JUNIOR</td><td><b>NEGREIROS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>ATESTADO</td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="047"><td>047</td><td>1737305</td><td>FRANCISCO SILVESTRE DA SILVA NETO</td><td><b>NETO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="048"><td>048</td><td>2355838</td><td>FRANCISCO WELTON TAVARES RAMOS</td><td><b>WELTON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="049"><td>049</td><td>1773373</td><td>FRANCIVALDO TEIXEIRA SILVA</td><td><b>TEIXEIRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="050"><td>050</td><td>1619670</td><td>FRANKLIN SOARES RODRIGUES</td><td><b>FRANKLIN</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="051"><td>051</td><td>2138202</td><td>GALBENISE LOBO MOURAO</td><td><b>GALBENISE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="052"><td>052</td><td>0160854102</td><td>GEFFESON PINHEIRO DE SOUZA FILHO</td><td><b>GEFFERSON</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="053"><td>053</td><td>2359462</td><td>GEFFERSON HENRIQUE RODRIGUES BRITO</td><td><b>HENRIQUE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="054"><td>054</td><td>300131693</td><td>GENISON DA SILVA MENDONCA</td><td><b>GENISON</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="055"><td>055</td><td>1743406</td><td>GEORGE JORGE FERREIRA DOS SANTOS</td><td><b>GEORGE</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="056"><td>056</td><td>1358754</td><td>GIDELBERG SILVA PINTO</td><td><b>GIDEL</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="057"><td>057</td><td>1546038</td><td>GILMANN PEREIRA DE MACEDO</td><td><b>GILMANN</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="058"><td>058</td><td>3294708</td><td>GILPAULO SIQUEIRA DE MELO</td><td><b>MELO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="059"><td>059</td><td>1546172</td><td>GUILHER DA LUZ MATTOS NETO</td><td><b>G NETO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>NOTURNO</td><td>DIREB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="060"><td>060</td><td>3123397</td><td>HAROLDO ASSIS DE BARROS</td><td><b>HAROLDO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>PERMUTA</td><td>SIMPLICIO</td><td></td><td></td><td></td></tr>
+<tr data-id="061"><td>061</td><td>2356038</td><td>HUGO SANTORELLY BRASIL</td><td><b>BRASIL</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="062"><td>062</td><td>300140278</td><td>JOSE HUMBERTO DE AGUIAR JUNIOR</td><td><b>HUMBERTO</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="063"><td>063</td><td>2358565</td><td>ISAQUE RODRIGUES FERREIRA</td><td><b>RODRIGUES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="064"><td>064</td><td></td><td>IURI LOPES LACERDA</td><td><b>LACERDA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="065"><td>065</td><td>1773385</td><td>JALMA LIMA DA CRUZ FILHO</td><td><b>JALMA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="066"><td>066</td><td>111597152</td><td>JARDEL DIAS PEREIRA</td><td><b>JARDEL</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="067"><td>067</td><td>1114980</td><td>JEAN PAUL DA SILVA PESSOA</td><td><b>JEAN PAUL</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="068"><td>068</td><td>2135352</td><td>JEAN PEREIRA DE CASTRO</td><td><b>JEAN PEREIRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="069"><td>069</td><td>2135335</td><td>JEFFERSON RICARDO DA SILVA</td><td><b>JEFFERSON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="070"><td>070</td><td>3304609</td><td>JEREMIAS RODRIGUES DOS SANTOS MORAIS</td><td><b>JEREMIAS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="071"><td>071</td><td>1546088</td><td>JOAQUIM FERREIRA NETO</td><td><b>JOAQUIM</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>ATESTADO</td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="072"><td>072</td><td>1405690</td><td>JOILSON DE SOUZA AMOR</td><td><b>JOILSON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="073"><td>073</td><td>1553790</td><td>JORGE SIMPLICIO DE ARAUJO</td><td><b>SIMPLICIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td>HAROLDO</td><td></td><td></td><td></td></tr>
+<tr data-id="074"><td>074</td><td>1546270</td><td>JOSE AFRANIO FERNANDES ALCOFORADO FILHO</td><td><b>AFRANIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="075"><td>075</td><td>2356868</td><td>JOSE HUDSON SILVA DE OLIVEIRA</td><td><b>OLIVEIRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="076"><td>076</td><td>1736950</td><td>JOSE ITAMAR PEREIRA VIANA JUNIOR</td><td><b>PEREIRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="077"><td>077</td><td>1875190</td><td>JOSE RODNEY DIOGO BOTELHO</td><td><b>BOTELHO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="078"><td>078</td><td>2358828</td><td>JOSE RODRIGO BARBOZA NASCIMENTO</td><td><b>RODRIGO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="079"><td>079</td><td>2358593</td><td>KAMILLA SILVA PEREIRA SANDER</td><td><b>KAMILLA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="080"><td>080</td><td>1739314</td><td>KLAUS KLEBER MENDES SKURUPSKI</td><td><b>KLAUS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="081"><td>081</td><td>3124054</td><td>LEONARDO CESAR DE ALMEIDA AZEVEDO</td><td><b>AZEVEDO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="082"><td>082</td><td>1737459</td><td>LEONARDO CICERO RAFAEL GONCALVES</td><td><b>CONCALVES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="083"><td>083</td><td>2361040</td><td>LEONARDO LIMA DE MELO</td><td><b>LEO MELO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="084"><td>084</td><td>1547515</td><td>LEONARDO SILVA E LEITE</td><td><b>LEITE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="085"><td>085</td><td>43003146</td><td>LINDOMAR DA SILVA BRAGA</td><td><b>LINDOMAR</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="086"><td>086</td><td>1396737</td><td>LUAN CARLOS SILVA VIEIRA</td><td><b>VIEIRA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="087"><td>087</td><td>2135957</td><td>LUANA MARIA LYRA CARRERAS CORREA DE OLIVEIRA</td><td><b>LUANA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="088"><td>088</td><td>1546169</td><td>LUIS ANTONIO DOS SANTOS</td><td><b>LUIS ANTONIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="089"><td>089</td><td>1739618</td><td>LUIS AUGUSTO CARVALHO MOTA E SILVA</td><td><b>MOTA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="090"><td>090</td><td>2357477</td><td>LUIZ FELIPE ROGERIO LIMA</td><td><b>FELIPE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="091"><td>091</td><td>300140698</td><td>JOSE MAICON GOMES DA SILVA</td><td><b>MAICON</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="092"><td>092</td><td>1737410</td><td>MARCELO ALVES DE SOUSA</td><td><b>SOUSA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>ATESTADO</td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="093"><td>093</td><td>300087789</td><td>MARCIO FERNANDES DE MOURA</td><td><b>MARCIO</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="094"><td>094</td><td>1773456</td><td>MARCIO MORAES SIQUEIRA</td><td><b>MORAIS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="095"><td>095</td><td>1524820</td><td>MARCO AURELIO AVANCI DA ROCHA</td><td><b>AURELIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="096"><td>096</td><td>3293119</td><td>MARCUS WALMSLEY MORAIS</td><td><b>MARCUS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="097"><td>097</td><td>1553676</td><td>MARINO DOS SANTOS CRISTO</td><td><b>CRISTO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>NOTURNO</td><td>DIPPF</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="098"><td>098</td><td>2135899</td><td>MARIO SILVA DOS SANTOS</td><td><b>MARIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>LICENCA</td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="099"><td>099</td><td>3294508</td><td>MATEUS GOMES DA SILVA</td><td><b>GOMES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="100"><td>100</td><td>2356973</td><td>MATEUS HEDONAL SANTOS SILVA</td><td><b>MATEUS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>NOTURNO</td><td>DIREB</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="101"><td>101</td><td></td><td>MATOSALEM JUNIOR</td><td><b>MATOSALEM</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="102"><td>102</td><td>2358976</td><td>MONA LISA SILVA FREIRE</td><td><b>MONA LISA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="103"><td>103</td><td>1010100</td><td>MONICA MARCATO</td><td><b>MONICA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="104"><td>104</td><td>3293139</td><td>NATAN BAIA FERREIRA</td><td><b>NATAN</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="105"><td>105</td><td>1584422</td><td>NEUCINEDE DE SOUSA SILVA</td><td><b>NEUCINEDE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="106"><td>106</td><td>1772929</td><td>NIELSON JOSE ALVES FILHO</td><td><b>NIELSON</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>PERMUTA</td><td>GALBENISE</td><td></td><td></td><td></td></tr>
+<tr data-id="107"><td>107</td><td>115787931</td><td>NIZAN PEREIRA DOS SANTOS</td><td><b>NIZAN</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="108"><td>108</td><td>3294183</td><td>PAULO GALBERLANO GUERREIRO DA SILVA</td><td><b>GUERREIRO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="109"><td>109</td><td>1546205</td><td>PEDRO PAULO VALENCA DE ANDRADE</td><td><b>VALENCA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="110"><td>110</td><td>1773969</td><td>PEDRO YVO DE CASTRO LINS</td><td><b>PEDRO YVO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="111"><td>111</td><td>1774328</td><td>PRISCILA CLEYDE BATISTA</td><td><b>PRISCILLA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="112"><td>112</td><td>115818161</td><td>RAFAEL MARQUES DE SOUZA</td><td><b>RAFAEL</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="113"><td>113</td><td>2358973</td><td>RAFAELLE CRISTINA TIMBO MAGALHAES</td><td><b>TIMBO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="114"><td>114</td><td>1772641</td><td>RAIMUNDO BIONE DA SILVA JUNIOR</td><td><b>BIONE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="115"><td>115</td><td>1739323</td><td>RAUL NASCIMENTO NASCIMENTO COSTA</td><td><b>RAUL</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="116"><td>116</td><td>2359025</td><td>RENATO HOHENFELD NERY DE OLIVEIRA</td><td><b>HOHENFELD</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="117"><td>117</td><td>1546490</td><td>RICHARD RODRIGUES BARANSKI</td><td><b>BARANSKI</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="118"><td>118</td><td>1739216</td><td>ROBISMAR LUCENA DE FREITAS</td><td><b>LUCENA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="119"><td>119</td><td>2143431</td><td>RODRIGO GUIMARAES BUENO</td><td><b>GUIMARAES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="120"><td>120</td><td>1525166</td><td>ROGERIO BARRETO BRAGA</td><td><b>ROGERIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="121"><td>121</td><td>2357499</td><td>SEBASTIAO EDUARDO DE ARAUJO SILVA</td><td><b>EDUARDO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="122"><td>122</td><td>2875837</td><td>SILVANO CASTELO BRANCO</td><td><b>SILVANO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="123"><td>123</td><td>4215791</td><td>SILVIA PATROCINIO DE SOUZA</td><td><b>SILVIA</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="124"><td>124</td><td>1773795</td><td>SIMONE OMENA OLIVEIRA</td><td><b>SIMONE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="125"><td>125</td><td>1738385</td><td>SMALEY FARIAS RODRIGUES COSTA</td><td><b>SMALEY</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="126"><td>126</td><td>3294266</td><td>SULIVAN DE OLIVEIRA BALTAZAR</td><td><b>SULIVAN</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="127"><td>127</td><td>2357440</td><td>THIAGO FREITAS LIMA</td><td><b>THIAGO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="128"><td>128</td><td></td><td>THIAGO GONCALVES DA SILVA MOURA</td><td><b>MOURA</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="129"><td>129</td><td>1773697</td><td>THIAGO SERGIO DANTAS DE ALMEIDA</td><td><b>DANTAS</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="130"><td>130</td><td>167014341</td><td>TOBIAS DA SILVA SERAPIAO</td><td><b>TOBIAS</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="131"><td>131</td><td>1736981</td><td>VALERIO LOPES DAS CHAGAS</td><td><b>VALERIO</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="132"><td>132</td><td>1874842</td><td>WAGNER FELIX COUTINHO</td><td><b>WANOR</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="133"><td>133</td><td>1000703</td><td>WANOR ONOFRE GUERRA NETO</td><td><b>WAGNER</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>CHARLIE</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="134"><td>134</td><td>1639820</td><td>DEYWISON XAVIER CABRAL DOS SANTOS</td><td><b>XAVIER</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="135"><td>135</td><td>11369682</td><td>YURI VINICIUS RODRIGUES GOMES</td><td><b>YURI</b></td><td class="sv-force-fpn">FPN</td><td>ATIVO</td><td>ALFA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="136"><td>136</td><td>3299386</td><td>ZILENE PINHEIRO ALMEIDA</td><td><b>ZILENE</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>BRAVO</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr data-id="137"><td>137</td><td>1773450</td><td>MANOEL CAVALCANTI NUNES NEVES</td><td><b>NEVES</b></td><td class="sv-force-ppf">PPF</td><td>ATIVO</td><td>DELTA</td><td>24H</td><td>DISED</td><td></td><td></td><td></td><td>ATESTADO</td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</div>
+<div aria-hidden="true" class="secao01-popovers" id="secao01Popovers">
+<div class="s01-popover pop-extra" data-popover="incluir-extra" id="popoverIncluirPresencaExtra">
+<div class="s01-pop-title title-green extra-title"><span>INSERIR PRESENCA EXTRA</span><span class="extra-title-gap"></span><button class="s01-pop-close" type="button">×</button></div>
+<div class="s01-pop-body extra-body">
+<div class="extra-line-gap h15"></div>
+<div class="extra-label-row">
+<label for="extraMotivo">MOTIVO*</label>
+<span></span>
+<label for="extraJornada">JORNADA*</label>
+<span></span>
+<label for="extraHorario">HORARIO</label>
+</div>
+<div class="extra-main-row">
+<select id="extraMotivo"><option value="">MOTIVO*</option></select>
+<span></span>
+<select id="extraJornada"><option value="">JORNADA*</option></select>
+<span></span>
+<input id="extraHorario" placeholder="00:00 - 00:00" type="text" inputmode="numeric" maxlength="13"/>
+</div>
+<div class="extra-line-gap h15"></div>
+<div class="extra-nome-label-row"><label>NOME*</label></div>
+<div id="extraNomesWrap">
+<div class="extra-name-row is-first">
+<select class="extraNomeSelect"><option value="">NOME*</option></select>
+<span></span>
+<button class="s01-square-add extra-add-name" type="button">+</button>
+<span></span>
+<button class="extra-remove-name" type="button">×</button>
+<span></span>
+<span class="extra-nome-completo"></span>
+</div>
+</div>
+<div class="extra-line-gap h10"></div>
+<div class="extra-rec-row">
+<input id="extraRecorrente" type="checkbox"/>
+<label for="extraRecorrente">RECORRENTE</label>
+<span class="extra-rec-gap"></span>
+<label class="extra-grupo-label extra-grupo-field is-hidden" for="extraGrupoSelect">GRUPO</label>
+<select class="extra-grupo-field is-hidden" id="extraGrupoSelect"><option value="">GRUPO</option></select>
+<button class="extra-grupo-add extra-grupo-field is-hidden" id="extraGrupoAdd" type="button">+</button>
+</div>
+<div class="extra-grupo-editor is-hidden" id="extraGrupoEditor">
+<input id="extraGrupoNome" placeholder="NOME DO GRUPO" type="text"/>
+<button id="extraGrupoSalvar" type="button" disabled title="Gravar grupo">▣</button>
+</div>
+<div class="extra-line-gap h15"></div>
+<div class="extra-pop-msg" id="extraPopMsg"></div>
+<div class="extra-actions"><button class="s01-save" type="button">GRAVAR</button><button class="s01-exit" type="button">SAIR</button></div>
+<div class="extra-line-gap h15"></div>
+</div>
+</div>
+<div class="s01-popover pop-recorrentes" data-popover="extra-recorrentes" id="popoverExtraRecorrentes">
+<div class="s01-pop-title title-green rec-title"><span>PRESENCA EXTRA RECORRENTE</span><span></span><button class="s01-pop-close" type="button">×</button></div>
+<div class="s01-pop-body rec-body">
+<div class="rec-gap h15"></div>
+<table class="rec-grupos-table">
+<colgroup><col class="rec-col-opcao"/><col class="rec-col-grupo"/><col class="rec-col-motivo"/><col class="rec-col-jornada"/><col class="rec-col-horario"/><col class="rec-col-edicao"/></colgroup>
+<thead><tr><th><input id="recTodosGrupos" type="checkbox" checked/></th><th>GRUPO</th><th>MOTIVO</th><th>JORNADA</th><th>HORARIO</th><th>EDICAO</th></tr></thead>
+<tbody id="recGruposBody"></tbody>
+</table>
+<div class="rec-gap h15"></div>
+<div class="rec-presencas-row">
+<input id="recTodosPresentes" name="recPresencaOpcao" type="radio"/>
+<label for="recTodosPresentes">TODOS PRESENTES</label>
+<span></span>
+<input id="recNenhumPresente" name="recPresencaOpcao" type="radio"/>
+<label for="recNenhumPresente">NENHUM PRESENTE</label>
+</div>
+<div class="rec-gap h15"></div>
+<div class="rec-membros-area">
+<table class="rec-membros-table">
+<colgroup><col class="rec-mem-pres"/><col class="rec-mem-nome"/><col class="rec-mem-grupo"/><col class="rec-mem-edicao"/></colgroup>
+<thead><tr><th>PRES.</th><th>NOME</th><th>GRUPO</th><th>EDICAO</th></tr></thead>
+<tbody id="recMembrosBody"></tbody>
+</table>
+<div class="rec-action-col"><button class="s01-save" id="recGravar" type="button">GRAVAR</button><button class="s01-exit" type="button">SAIR</button></div>
+</div>
+<div class="rec-gap h15"></div>
+</div>
+</div>
+<div class="s01-popover efetivo-action-pop" data-popover="efetivo-pres" id="popoverEfetivoPres">
+<div class="s01-pop-title title-blue"><span>REMOVER PRESENCA</span><button class="s01-pop-close" type="button">×</button></div>
+<div class="s01-pop-body">
+<div class="efetivo-pop-name" id="efetivoPresNome"></div>
+<div class="efetivo-pop-fields" id="efetivoPresFields">
+<select id="efetivoPresMotivo"><option value="">MOTIVO*</option></select>
+<select id="efetivoPresSubstituto"><option value="">SUBSTITUTO*</option></select>
+</div>
+<div class="efetivo-pop-actions">
+<button class="s01-exit" type="button">SAIR</button>
+<button class="s01-save" id="efetivoPresGravar" type="button" disabled>GRAVAR</button>
+<button class="s01-remove" id="efetivoPresRemover" type="button" disabled>REMOVER</button>
+</div>
+</div>
+</div>
+<div class="s01-popover efetivo-action-pop" data-popover="efetivo-aus" id="popoverEfetivoAus">
+<div class="s01-pop-title title-purple"><span>ALTERAR AUSENCIA</span><button class="s01-pop-close" type="button">×</button></div>
+<div class="s01-pop-body">
+<div class="efetivo-pop-name" id="efetivoAusNome"></div>
+<div class="efetivo-pop-fields" id="efetivoAusFields">
+<select id="efetivoAusMotivo"><option value="">MOTIVO*</option></select>
+<select id="efetivoAusSubstituto"><option value="">SUBSTITUTO*</option></select>
+</div>
+<div class="efetivo-pop-actions">
+<button class="s01-exit" type="button">SAIR</button>
+<button class="s01-save" id="efetivoAusGravar" type="button" disabled>GRAVAR</button>
+<button class="s01-remove" id="efetivoAusRemover" type="button">REMOVER</button>
+</div>
+</div>
+</div>
+<div class="s01-popover efetivo-bulk-pop" data-popover="efetivo-bulk" id="popoverEfetivoBulk">
+<div class="s01-pop-title title-red"><span id="efetivoBulkTitulo">REMOVER FILTRO</span><button class="s01-pop-close" type="button">×</button></div>
+<div class="s01-pop-body">
+<div class="s01-pop-message" id="efetivoBulkMsg"></div>
+<div class="efetivo-pop-actions">
+<button class="s01-exit" type="button">SAIR</button>
+<button class="s01-remove" id="efetivoBulkRemover" type="button">REMOVER</button>
+</div>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="resp-popover" data-popover="responsaveis-posto" id="popoverResponsaveisPosto">
+<div class="resp-pop-header">
+<span class="resp-pop-title">RESPONSÁVEIS DE POSTO</span>
+<button class="resp-pop-sair" type="button">SAIR</button>
+</div>
+<div class="resp-pop-filtros">
+<label class="resp-pop-field w60">FORÇA
+      <select id="respFiltroForca">
+<option>PPF</option>
+<option>FPN</option>
+<option>TODOS</option>
+</select>
+</label>
+<label class="resp-pop-field w60">PLANTÃO
+      <select id="respFiltroPlantao">
+<option>TODOS</option>
+<option>ALFA</option>
+<option>BRAVO</option>
+<option>CHARLIE</option>
+<option>DELTA</option>
+</select>
+</label>
+<label class="resp-pop-field w150">PESQUISAR
+      <input id="respBusca" placeholder="Pesquisar" type="text"/>
+</label>
+<button class="resp-pop-limpar" type="button">LIMPAR</button>
+</div>
+<table class="resp-pop-table">
+<colgroup>
+<col/>
+<col/>
+<col/>
+<col/>
+<col/>
+<col/>
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>FORÇA</th>
+<th>PLANTÃO</th>
+<th>POSTO</th>
+<th>RESPONSÁVEL</th>
+<th>STATUS</th>
+</tr>
+</thead>
+<tbody id="respPostosBody">
+</tbody>
+</table>
+</div>
+<div aria-hidden="true" class="config-popover" data-popover="config-escalas" id="popoverConfigEscalas">
+<div class="config-pop-header">
+<span class="config-pop-title">CONFIGURAÇÕES</span>
+<button class="config-pop-sair" type="button">SAIR</button>
+</div>
+<div class="config-tabs">
+<button class="config-tab active" data-config-tab="horarios" type="button">HORÁRIOS</button>
+<button class="config-tab" data-config-tab="postos" type="button">POSTOS</button>
+</div>
+<div class="config-tab-panel active" data-config-panel="horarios">
+<aside class="config-side-menu">
+<div class="config-menu-title">POSTOS EXTERNOS</div>
+<button class="config-menu-link active" data-horario-config="postos-diurno" type="button">DIURNO</button>
+<button class="config-menu-link" data-horario-config="postos-noturno" type="button">NOTURNO</button>
+<div class="config-menu-title">VIVÊNCIAS</div>
+<button class="config-menu-link" data-horario-config="vivencias-diurno" type="button">DIURNO</button>
+<button class="config-menu-link" data-horario-config="vivencias-noturno" type="button">NOTURNO</button>
+</aside>
+<main class="config-content">
+<div class="config-content-banner">HORÁRIOS - POSTOS EXTERNOS - DIURNO</div>
+<div class="horarios-layout">
+<section class="horario-form-section">
+<div class="hor-gap-15"></div>
+<div class="hor-section-banner">CADASTRO DE HORARIOS</div>
+<div class="hor-gap-5"></div>
+<input id="horId" type="hidden"/>
+<div class="hor-label-row">
+<span>Inicio do Turno*</span>
+<span>Fim do Turno*</span>
+</div>
+<div class="hor-form-row">
+<input id="horInicio" type="text" maxlength="5" inputmode="numeric" disabled/>
+<input id="horFim" type="text" maxlength="5" inputmode="numeric" disabled/>
+</div>
+<div class="hor-gap-10"></div>
+<div class="hor-label-row">
+<span>Nº de colunas*</span>
+<span>Nº de grupos*</span>
+</div>
+<div class="hor-form-row">
+<select id="horColunas" disabled></select>
+<select id="horGrupos" disabled></select>
+</div>
+<div class="hor-gap-5"></div>
+<div class="hor-rendicao" id="horRendicao">Intervalo de rendição: -</div>
+<div class="hor-gap-20"></div>
+<div class="hor-section-banner">INTERVALOS POR COLUNA</div>
+<div class="hor-gap-10"></div>
+<table class="hor-filhos-table">
+<colgroup><col class="hor-col-num"/><col class="hor-col-grupo"/><col class="hor-col-inicio"/><col class="hor-col-fim"/></colgroup>
+<thead><tr><th>#</th><th>GRUPO*</th><th>H. INICIO*</th><th>H.FIM*</th></tr></thead>
+<tbody id="horFilhosBody"></tbody>
+</table>
+<div class="hor-gap-20"></div>
+<div class="hor-buttons">
+<button id="horNovo" type="button">NOVO</button>
+<button id="horGravar" type="button" disabled>GRAVAR</button>
+<button id="horRemover" type="button" disabled>REMOVER</button>
+</div>
+</section>
+<section class="horario-list-section">
+<div class="hor-gap-15"></div>
+<div class="hor-section-banner">TABELA DE HORARIOS</div>
+<div class="hor-gap-5"></div>
+<table class="hor-mae-table">
+<colgroup><col class="hor-mae-atual"/><col class="hor-mae-id"/><col class="hor-mae-setor"/><col class="hor-mae-turno"/><col class="hor-mae-grupos"/><col class="hor-mae-inicio"/><col class="hor-mae-fim"/></colgroup>
+<thead><tr><th>ATUAL</th><th>ID</th><th>SETOR</th><th>TURNO</th><th>GRUPOS</th><th>H. INICIO</th><th>H.FIM</th></tr></thead>
+<tbody id="horMaeBody"></tbody>
+</table>
+</section>
+</div>
+</main>
+</div>
+<div class="config-tab-panel" data-config-panel="postos">
+<main class="config-content config-content-full">
+<div class="config-postos-banner-row">
+<div class="config-postos-left-banner"></div>
+<div class="config-postos-banner-gap"></div>
+<div class="config-content-banner config-postos-banner">POSTO | TURNO : PERMISSÕES E VAGAS</div>
+</div>
+<table class="config-postos-table">
+<colgroup><col class="cfg-posto-num"/><col class="cfg-posto-nome"/><col class="cfg-posto-status"/><col class="cfg-posto-chefia"/><col class="cfg-posto-visivel"/><col class="cfg-posto-gap"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/><col class="cfg-posto-gap"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/><col class="cfg-posto-turno"/></colgroup>
+<thead>
+<tr><th class="config-postos-merged-title" colspan="5">CONFIGURAÇÃO DOS POSTOS</th><th class="posto-gap-cell"></th><th colspan="4">DIURNO</th><th class="posto-gap-cell"></th><th colspan="4">NOTURNO</th></tr>
+<tr><th>#</th><th>POSTO</th><th>STATUS</th><th>CHEFIA</th><th>VISÍVEL</th><th class="posto-gap-cell"></th><th>TAB.</th><th>VAGAS</th><th>PPF</th><th>FPN</th><th class="posto-gap-cell"></th><th>TAB.</th><th>VAGAS</th><th>PPF</th><th>FPN</th></tr>
+</thead>
+<tbody id="configPostosBody"></tbody>
+</table>
+<div class="config-pop-actions">
+<button class="config-save" type="button">GRAVAR</button>
+<button class="config-cancel" type="button">SAIR</button>
+</div>
+</main>
+</div>
+</div>
+<div aria-hidden="true" class="s03-clear-popover" id="popoverS03LimparTabela">
+<div class="s03-clear-box">
+<div class="s03-clear-title">LIMPAR TABELA</div>
+<div class="s03-clear-msg">Deseja limpar a tabela selecionada?</div>
+<div class="s03-clear-actions">
+<button class="s03-clear-confirm" id="btnS03LimparConfirmar" type="button">CONFIRMAR</button>
+<button class="s03-clear-exit" id="btnS03LimparSair" type="button">SAIR</button>
+</div>
+</div>
+</div>
+<script src="js/firebase-sync.js?v=6"></script>
+<script src="js/modulos/00-init-abas-turno.js?v=1"></script>
+<script src="js/modulos/01-config-postos.js?v=6"></script>
+<script src="js/modulos/02-config-horarios.js?v=10"></script>
+<script src="js/modulos/03-responsaveis-base.js?v=2"></script>
+<script src="js/modulos/04-escala-interacoes.js?v=2"></script>
+<script src="js/modulos/05-responsaveis-sincronizacao.js?v=2"></script>
+<script src="js/modulos/06-escala-persistencia-historico.js?v=6"></script>
+<script src="js/modulos/07-arquivos-gestao.js?v=8"></script>
+<script src="js/modulos/08-eventos-inicializacao.js?v=6"></script>
+<script src="js/impressao.js?v=2"></script>
+<script src="js/cadastro.js?v=15"></script>
+<script>
+// Registro do Service Worker (PWA)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js?v=19", { updateViaCache: "none" })
+      .then(() => console.info("[SW] Service Worker registrado."))
+      .catch((err) => console.warn("[SW] Falha no registro:", err));
+  });
+}
+</script>
+</body>
+</html>

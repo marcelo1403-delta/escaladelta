@@ -1,0 +1,322 @@
+/* Seção 01 - efetivo
+   Extraído de css_canonico_limpo.css linhas 1130-1447.
+*/
+
+/* —— Seção 01 — Efetivo —— */
+.lp.lp-v9-efetivo,
+.secao02,
+.secao03{
+  background:#fff;
+  padding-bottom:20px;
+}
+
+.lp.lp-v9-efetivo{
+  flex:0 0 400px;
+  width:400px;
+  min-width:400px;
+  max-width:400px;
+  height:auto;
+  min-height:100%;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.lp.lp-v9-efetivo .panel-header-v9.efetivo-header-v9{width:400px;padding:0 10px}
+.lp.lp-v9-efetivo .panel-title-v9{flex:1 1 auto}
+
+.lp.lp-v9-efetivo .efetivo-force-v9{
+  display:flex;
+  align-items:stretch;
+  gap:4px;
+  margin-left:auto;
+  margin-right:0;
+  height:30px;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn{
+  width:84px;
+  min-width:84px;
+  height:30px;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.8px;
+  border-width:2px;
+  cursor:default;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.ppf{
+  background:#eef4ff;
+  color:#5f7fbf;
+  border:2px solid #9db6e2;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.fpn{
+  background:#fff0f0;
+  color:#b05b5b;
+  border:2px solid #dea0a0;
+}
+
+.lp.lp-v9-efetivo .efetivo-filtros-v9{
+  width:378px;
+  height:24px;
+  margin:10px 10px 0;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.lp.lp-v9-efetivo .srv-filtro-v9{
+  flex:1 1 0;
+  height:24px;
+  border:1px solid rgba(184,160,134,.35);
+  border-radius:2px;
+  background:rgba(246,239,231,.55);
+  color:rgba(128,107,84,.68);
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.1px;
+  cursor:default;
+}
+
+.lp.lp-v9-efetivo .srv-filtro-v9.active{
+  background:#b8a086;
+  color:#fefcfa;
+  border-color:#b8a086;
+}
+
+.lp.lp-v9-efetivo .srv-filtro-v9[data-status="ausente"],
+.lp.lp-v9-efetivo .srv-filtro-v9[data-status="permuta"],
+.lp.lp-v9-efetivo .srv-filtro-v9[data-status="extra"],
+.lp.lp-v9-efetivo .srv-filtro-v9[data-status="todos"]{color:#A6A6A6}
+
+.efetivo-filter-gap{
+  width:378px;
+  height:25px;
+  margin:0 10px;
+  display:flex;
+  align-items:center;
+}
+
+.efetivo-filter-msg{
+  flex:1 1 auto;
+  min-width:0;
+  padding-left:10px;
+  color:#94a3b8;
+  font-size:9px;
+  font-weight:400;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.efetivo-filter-clear{
+  width:12px;
+  height:12px;
+  margin-right:10px;
+  border:1px solid #fecaca;
+  border-radius:2px;
+  background:#fff5f5;
+  color:#b91c1c;
+  font-size:10px;
+  font-weight:900;
+  line-height:10px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.efetivo-filter-clear.is-hidden{
+  visibility:hidden;
+}
+
+/* Tabela canônica */
+.secao01-tabela-canonica{
+  width:378px;
+  min-width:378px;
+  max-width:378px;
+  margin:0 10px;
+  border-collapse:separate;
+  border-spacing:2px 0;
+  table-layout:fixed;
+}
+
+.secao01-tabela-canonica col.col-num,
+.secao01-tabela-canonica col.col-d,
+.secao01-tabela-canonica col.col-n{width:22px}
+.secao01-tabela-canonica col.col-sit{width:30px}
+.secao01-tabela-canonica col.col-nome{width:127px}
+.secao01-tabela-canonica col.col-obs{width:145px}
+.secao01-tabela-canonica col.col-id,
+.secao01-tabela-canonica col.col-turno,
+.secao01-tabela-canonica col.col-tipo{width:0}
+
+.secao01-tabela-canonica th{
+  height:20px;
+  line-height:20px;
+  background:var(--ppf-ui-bg);
+  color:var(--ppf-ui-text);
+  font-size:9px;
+  font-weight:900;
+  text-align:center;
+  overflow:hidden;
+  white-space:nowrap;
+}
+
+.secao01-tabela-canonica td{
+  height:18px;
+  line-height:18px;
+  font-size:9px;
+  text-align:center;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.secao01-tabela-canonica tbody tr:nth-child(odd) td{background:#f8fafc}
+.secao01-tabela-canonica tbody tr:nth-child(even) td{background:#fff}
+
+.secao01-tabela-canonica tbody tr.is-ausente td{
+  background:#fee2e2;
+  color:#991b1b;
+}
+
+.secao01-tabela-canonica tbody tr.is-folgante td{
+  background:#fff7ed;
+  color:#9a3412;
+}
+
+.secao01-tabela-canonica td.nm,
+.secao01-tabela-canonica td.ob{text-align:left;padding-left:5px}
+
+.secao01-tabela-canonica td.nm{
+  display:flex;
+  align-items:center;
+  gap:3px;
+}
+
+.secao01-tabela-canonica .eft-nome-text{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.secao01-tabela-canonica .eft-resp-badge{
+  flex:0 0 auto;
+  min-width:14px;
+  height:12px;
+  padding:0 2px;
+  border:1px solid #94a3b8;
+  border-radius:2px;
+  background:#f8fafc;
+  color:#334155;
+  font-size:7px;
+  font-weight:900;
+  line-height:10px;
+  text-align:center;
+}
+
+.secao01-tabela-canonica tr.is-alocar-row td.nm{
+  background:#f1f5f9;
+}
+
+.secao01-tabela-canonica tr.is-alocar-selected td.nm{
+  background:#dcfce7;
+  color:#14532d;
+  cursor:pointer;
+}
+
+.secao01-tabela-canonica tr.s03-efetivo-disabled td.nm{
+  background:#f8fafc;
+  color:#94a3b8;
+  cursor:not-allowed;
+  opacity:.72;
+}
+
+.secao01-tabela-canonica td.ob{
+  font-size:8px;
+}
+
+.secao01-tabela-canonica td.su,
+.secao01-tabela-canonica td.mo{font-size:10px;font-weight:900}
+
+.secao01-tabela-canonica th.st,
+.secao01-tabela-canonica td.st{width:30px}
+
+.secao01-tabela-canonica td.st.sit-pres{
+  color:var(--ppf-ui-text);
+  font-weight:900;
+}
+
+.secao01-tabela-canonica .sit-btn{
+  width:28px;
+  height:16px;
+  border:0;
+  border-radius:2px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-weight:900;
+  line-height:16px;
+  padding:0;
+  cursor:pointer;
+}
+
+.secao01-tabela-canonica .sit-pres-btn{
+  color:var(--ppf-ui-text);
+}
+
+.secao01-tabela-canonica .sit-btn:hover{
+  background:rgba(37,99,235,.08);
+}
+
+.secao01-tabela-canonica .turno-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  font-size:12px;
+  font-weight:900;
+  line-height:14px;
+}
+.secao01-tabela-canonica .icon-sol.is-outline{color:var(--day);background:transparent}
+.secao01-tabela-canonica .icon-sol.is-alocado{color:#fff;background:var(--day)}
+.secao01-tabela-canonica .icon-lua.is-outline{color:var(--night);background:transparent}
+.secao01-tabela-canonica .icon-lua.is-alocado{color:#fff;background:var(--night)}
+.secao01-tabela-canonica .icon-proibido{color:rgba(220,38,38,.58);background:transparent}
+.secao01-tabela-canonica td.su.is-dia-alocado{background:#fff3b0}
+.secao01-tabela-canonica td.mo.is-noite-alocado{background:#dbeafe}
+.secao01-tabela-canonica td.su.is-dia-apto,
+.secao01-tabela-canonica td.mo.is-noite-apto{background:transparent}
+.secao01-tabela-canonica td.su.is-dia-bloqueado,
+.secao01-tabela-canonica td.mo.is-noite-bloqueado{background:#fff1f2}
+
+.hidden-logica,
+.secao01-tabela-canonica .hidden-logica{display:none;width:0;padding:0;border:0;overflow:hidden}
+
+.eft-extra-wrap{
+  width:380px;
+  margin:8px 10px 0;
+  display:none;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:0;
+}
+body.efetivo-ready .eft-extra-wrap{display:grid}
+.eft-extra-btn{
+  width:100%;
+  height:24px;
+  border:1px solid #86efac;
+  border-radius:4px;
+  background:#dcfce7;
+  color:#15803d;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.4px;
+}
+.eft-extra-gap{display:block}
+

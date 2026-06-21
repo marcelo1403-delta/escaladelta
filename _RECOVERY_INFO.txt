@@ -1,0 +1,3 @@
+﻿Recuperado de: https://escaladelta.pages.dev/
+Data UTC: 2026-06-21 01:15:11
+Arquivos listados pelo service worker: 31

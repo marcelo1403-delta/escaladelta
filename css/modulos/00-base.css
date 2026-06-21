@@ -1,0 +1,73 @@
+/* Base global: variáveis, reset e corpo
+   Extraído de css_canonico_limpo.css linhas 1-69.
+*/
+
+@charset "UTF-8";
+
+/* Sandbox canônico — uma regra por intenção, sem sobreposição */
+
+:root{
+  --bg:#f2ede2;
+  --panel:#fffdf7;
+  --line:#c8bfaa;
+  --line-soft:#e1d9c8;
+  --text:#1e1a12;
+  --muted:#6b6152;
+
+  --ppf-ui-bg:#dfe8f8;
+  --ppf-ui-text:#2457b5;
+  --ppf-ui-border:#b6c9ea;
+
+  --fpn-ui-bg:#f6dede;
+  --fpn-ui-text:#8b1a1a;
+  --fpn-ui-border:#e8bcbc;
+
+  --day:#8b6914;
+  --day-bg:#fff7cc;
+  --night:#1e3a8a;
+  --night-bg:#e6f0ff;
+
+  --s03-cell-border:rgba(51,65,85,.26);
+  --s03-gap-line:rgba(51,65,85,.36);
+  --s03-t4-gap-border:rgba(51,65,85,.18);
+  --s03-min-width:896px;
+  --s03-max-width:1130px;
+  --config-shell-width:914px;
+  --config-menu-width:170px;
+  --config-content-width:724px;
+  --config-table-width:704px;
+
+  --zebra-diurno-claro:#fffdf7;
+  --zebra-diurno-suave:#f8fafc;
+  --zebra-noturno-claro:#fffdf7;
+  --zebra-noturno-suave:#f2fff7;
+
+  --turno-noturno-banner-bg:#e4f2e0;
+  --turno-noturno-banner-border:#b8d4b0;
+  --turno-noturno-text:#508d60;
+  --turno-noturno-posto-bg:#f2fff7;
+
+  --btn-state-active-bg:#0f766e;
+  --btn-state-active-text:#ffffff;
+  --btn-state-active-border:#0d9488;
+  --btn-state-off-bg:#e2e8f0;
+  --btn-state-off-text:#64748b;
+  --btn-state-off-border:#cbd5e1;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  height:100%;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+body{
+  min-width:max-content;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+  font-size:11px;
+}
+

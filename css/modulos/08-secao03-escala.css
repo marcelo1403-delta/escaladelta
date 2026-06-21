@@ -1,0 +1,604 @@
+/* Seção 03 - escalas T2/T3/T4/T5
+   Extraído de css_canonico_limpo.css linhas 4394-4959.
+*/
+
+/* —— Seção 03 — Escalas —— */
+.secao03{
+  flex:0 1 auto;
+  width:fit-content;
+  min-width:var(--s03-min-width);
+  max-width:var(--s03-max-width);
+  overflow:visible;
+}
+
+.s03-title{
+  width:auto;
+  min-width:var(--s03-min-width);
+  max-width:var(--s03-max-width);
+  justify-content:flex-start;
+}
+
+.s03-title-left{height:30px;display:flex;align-items:center;gap:8px}
+
+.s03-btn{
+  height:22px;
+  min-width:54px;
+  padding:0 8px;
+  border:1px solid #cbd5e1;
+  border-radius:3px;
+  background:#fff;
+  color:#475569;
+  font-size:9px;
+  font-weight:900;
+  line-height:20px;
+}
+
+.s03-toolbar{
+  height:30px;
+  min-width:var(--s03-min-width);
+  max-width:var(--s03-max-width);
+  margin:10px 10px 0;
+  display:flex;
+  align-items:center;
+  gap:50px;
+}
+
+.s03-tool-group{
+  height:30px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+
+.s03-toolbar .s03-btn{
+  height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:28px;
+}
+
+.s03-toolbar .s03-btn.turno{
+  width:110px;
+  min-width:110px;
+  gap:7px;
+  font-size:13px;
+  font-weight:900;
+}
+
+.s03-toolbar .s03-btn.turno::before{
+  font-size:15px;
+  font-weight:900;
+  line-height:1;
+}
+
+.s03-toolbar .s03-btn.turno.day::before{
+  content:"☀";
+  color:#2563eb;
+}
+
+.s03-toolbar .s03-btn.turno.night::before{
+  content:"☾";
+  color:#facc15;
+}
+
+.s03-toolbar .s03-btn.turno.all::before{
+  content:"☀ | ☾";
+  color:#7a7469;
+  font-size:12px;
+}
+
+.s03-toolbar .s03-btn.turno.day{
+  background:var(--ppf-ui-bg);
+  color:var(--ppf-ui-text);
+  border-color:var(--ppf-ui-border);
+}
+
+.s03-toolbar .s03-btn.turno.night{
+  background:var(--turno-noturno-banner-bg);
+  color:var(--turno-noturno-text);
+  border-color:var(--turno-noturno-banner-border);
+}
+
+.s03-toolbar .s03-btn.turno.all{
+  background:#f9f6f1;
+  color:#7a7469;
+  border-color:#d8d0c5;
+}
+
+.s03-toolbar .s03-btn.turno:not(.active){
+  opacity:.35;
+}
+
+body.turno-diurno .s03-card-noturno,
+body.turno-diurno .s03-card-t5,
+body.turno-noturno .s03-card-t2,
+body.turno-noturno .s03-card-t3{
+  display:none;
+}
+
+body.turno-noturno .s03-card-noturno{
+  margin-top:0;
+}
+
+body.turno-todos .s03-card-noturno{
+  margin-top:15px;
+}
+
+.s03-action-btn,
+.s03-output-btn{
+  gap:5px;
+  padding:0 8px;
+  font-size:9px;
+  font-weight:900;
+}
+
+.s03-action-btn{
+  width:78px;
+  min-width:78px;
+}
+
+.s03-tool-edicao .s03-action-btn{
+  background:rgba(246,239,231,.55);
+  color:#7a7469;
+  border-color:rgba(184,160,134,.45);
+}
+
+.s03-tool-edicao .s03-action-btn.active{
+  background:#15803d;
+  color:#fff;
+  border-color:#166534;
+  opacity:1;
+}
+
+.s03-tool-edicao .s03-action-btn.is-unavailable,
+.s03-tool-edicao .s03-action-btn:disabled{
+  background:#eef2f7;
+  color:#94a3b8;
+  border-color:#cbd5e1;
+}
+
+.s03-output-btn{
+  width:86px;
+  min-width:86px;
+  background:#2f4f7f;
+  color:#fff;
+  border-color:#41699f;
+}
+
+.s03-action-icon{
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+}
+
+.s03-output-btn .s03-action-icon{
+  font-size:15px;
+}
+
+.s03-content{
+  width:fit-content;
+  min-width:var(--s03-min-width);
+  max-width:var(--s03-max-width);
+  padding:10px 10px 0;
+  box-sizing:border-box;
+}
+.s03-card{width:max-content}
+.s03-card + .s03-card{margin-top:15px}
+
+.s03-banner{
+  height:28px;
+  background:var(--ppf-ui-bg);
+  color:var(--ppf-ui-text);
+  border:1px solid var(--ppf-ui-border);
+  border-radius:4px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 10px;
+  box-sizing:border-box;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.6px;
+}
+
+.s03-card .s03-banner{width:auto}
+.s03-banner-t2{min-width:590px}
+.s03-banner-t3{min-width:445px}
+.s03-banner-t4{min-width:746px}
+.s03-banner-t5{min-width:445px}
+
+.s03-banner.turno-noturno{
+  background:var(--turno-noturno-banner-bg);
+  color:var(--turno-noturno-text);
+  border-color:var(--turno-noturno-banner-border);
+}
+
+.s03-card-noturno{margin-top:15px}
+.s03-card-noturno .s03-table{margin-top:10px}
+
+.s03-banner-x{
+  width:22px;
+  height:20px;
+  border:1px solid currentColor;
+  border-radius:3px;
+  background:rgba(255,255,255,.55);
+  color:inherit;
+  font-size:14px;
+  font-weight:900;
+  line-height:18px;
+  padding:0;
+}
+
+/* Tabelas T2/T3: gaps claros, zebrado por coluna, sem linha escura nos espaços */
+.s03-table{
+  margin-top:10px;
+  border-collapse:separate;
+  border-spacing:2px 0;
+  table-layout:fixed;
+  background:#fff;
+}
+
+.s03-table tbody::before{
+  content:"";
+  display:table-row;
+  height:2px;
+}
+
+.s03-table th,
+.s03-table td{
+  height:18px;
+  line-height:18px;
+  border:1px solid var(--s03-cell-border);
+  text-align:center;
+  font-size:9px;
+  font-weight:700;
+  padding:0 2px;
+  overflow:hidden;
+  white-space:nowrap;
+  box-sizing:border-box;
+}
+
+.s03-table th{
+  color:var(--ppf-ui-text);
+  border-radius:2px;
+  font-weight:900;
+}
+
+.s03-table .s03-zebra-a{background:var(--zebra-diurno-claro) !important}
+.s03-table .s03-zebra-b{background:var(--zebra-diurno-suave) !important}
+.s03-table.turno-noturno .s03-zebra-a{background:var(--zebra-noturno-claro) !important}
+.s03-table.turno-noturno .s03-zebra-b{background:var(--zebra-noturno-suave) !important}
+.t3-table thead tr:nth-child(2) th,
+.t5-table thead tr:nth-child(2) th{
+  color:#94a3b8;
+  font-size:8px;
+}
+.t3-table thead tr:nth-child(2) th,
+.t5-table thead tr:nth-child(2) th,
+.t3-table tbody tr:first-child td,
+.t5-table tbody tr:first-child td{
+  border-top:2px solid #fff;
+  box-shadow:inset 0 1px 0 rgba(148,163,184,.22);
+}
+
+.t2-table{width:max-content;min-width:135px}
+.t2-table .t2-col-posto{width:50px}
+.t2-table .t2-col-slot{width:85px}
+
+.t2-table thead th:nth-child(1),
+.t2-table .posto-cell{background:#eef2ff;color:#1e3a8a}
+
+.t2-table thead th:nth-child(2),
+.t2-table thead th:nth-child(4),
+.t2-table thead th:nth-child(6),
+.t2-table tbody td:nth-child(2),
+.t2-table tbody td:nth-child(4),
+.t2-table tbody td:nth-child(6),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(1),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(3),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(5){background:var(--zebra-diurno-claro)}
+
+.t2-table thead th:nth-child(3),
+.t2-table thead th:nth-child(5),
+.t2-table thead th:nth-child(7),
+.t2-table tbody td:nth-child(3),
+.t2-table tbody td:nth-child(5),
+.t2-table tbody td:nth-child(7),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(2),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(4),
+.t2-table tbody tr:not(.grupo-start) td:nth-child(6){background:var(--zebra-diurno-suave)}
+
+.t2-table .posto-cell,
+.t2-table thead th:nth-child(1){
+  font-size:10px;
+  font-weight:900;
+  vertical-align:middle;
+  border:1px solid var(--s03-cell-border);
+}
+
+.t2-table thead th:not(:first-child),
+.t3-table thead th{
+  font-size:10px;
+}
+
+.t2-table .posto-cell{
+  font-size:11px;
+}
+
+.t2-table thead th:nth-child(1){
+  font-size:10px;
+}
+
+.t2-table tbody tr:not(.grupo-start) td,
+.t3-table tbody tr + tr td{
+  border-top:.1px solid rgba(100,116,139,.025);
+  border-bottom:.1px solid rgba(100,116,139,.025);
+}
+
+.t2-table tbody td,
+.t3-table tbody td{
+  border-left:1px solid var(--s03-cell-border);
+  border-right:1px solid var(--s03-cell-border);
+}
+
+.t2-table tbody tr.destaque-linha td:not(.posto-cell),
+.t3-table tbody tr.destaque-linha td{
+  background-image:linear-gradient(rgba(255,247,204,.78),rgba(255,247,204,.78));
+  color:var(--day);
+  font-weight:900;
+  border-left-color:#d6b34d;
+  border-right-color:#d6b34d;
+  border-bottom-color:#d6b34d;
+}
+
+/* Última linha do bloco (ex.: body linha 5 = fim P1, linha 8 = fim P2) */
+.t2-table tbody tr:has(+ tr.grupo-start:not(:first-child)) td{
+  border-bottom:1px solid var(--s03-gap-line);
+}
+
+/* POSTO mesclado (rowspan): mesma linha na base do bloco */
+.t2-table tbody tr.grupo-start td.posto-cell[rowspan]{
+  border-bottom:1px solid var(--s03-gap-line);
+}
+
+/* Gap 2px entre postos (P1, P2, T1…) + linha fina central no espaço */
+.t2-table tbody tr.grupo-start:not(:first-child) td,
+.t2-table tbody tr.grupo-start:not(:first-child) .posto-cell{
+  border-top:2px solid #fff;
+  box-shadow:inset 0 1px 0 var(--s03-gap-line);
+}
+
+.t3-table{width:max-content;min-width:85px}
+.t3-table col{width:85px}
+
+.t3-table thead th:nth-child(1),
+.t3-table thead th:nth-child(3),
+.t3-table thead th:nth-child(5),
+.t3-table tbody td:nth-child(1),
+.t3-table tbody td:nth-child(3),
+.t3-table tbody td:nth-child(5){background:var(--zebra-diurno-claro)}
+
+.t3-table thead th:nth-child(2),
+.t3-table thead th:nth-child(4),
+.t3-table tbody td:nth-child(2),
+.t3-table tbody td:nth-child(4){background:var(--zebra-diurno-suave)}
+
+.t3-table tbody tr:last-child td{
+  border-bottom:1px solid var(--s03-cell-border);
+}
+
+/* —— T4 NOTURNO: zebrado por par de colunas (colgroup), cabeçalho em 2 linhas —— */
+.t4-table{width:max-content;min-width:135px}
+
+.t4-table .t4-col-posto{width:50px}
+.t4-table .t4-zebra-a{width:85px}
+.t4-table .t4-zebra-b{width:85px}
+
+.t4-table col.t4-zebra-a{background:var(--zebra-noturno-claro)}
+.t4-table col.t4-zebra-b{background:var(--zebra-noturno-suave)}
+
+.t4-table.turno-noturno thead th{
+  color:var(--turno-noturno-text);
+}
+
+.t4-table .t4-th-posto,
+.t4-table .posto-cell{
+  background:var(--turno-noturno-posto-bg);
+  color:var(--turno-noturno-text);
+  font-size:10px;
+  font-weight:900;
+  vertical-align:middle;
+  border:1px solid var(--s03-cell-border);
+}
+
+/* Zebrado de 2 em 2 — thead + tbody, colunas de horário (a partir da 2ª coluna) */
+.t4-table thead tr.t4-head-grupos th[colspan="2"]:nth-of-type(2),
+.t4-table thead tr.t4-head-grupos th[colspan="2"]:nth-of-type(4),
+.t4-table thead tr.t4-head-slots th:nth-child(4n+1),
+.t4-table thead tr.t4-head-slots th:nth-child(4n+2),
+.t4-table tbody tr.grupo-start td:nth-child(4n+2),
+.t4-table tbody tr.grupo-start td:nth-child(4n+3),
+.t4-table tbody tr:not(.grupo-start) td:nth-child(4n+1),
+.t4-table tbody tr:not(.grupo-start) td:nth-child(4n+2){
+  background-color:var(--zebra-noturno-claro);
+}
+
+.t4-table thead tr.t4-head-grupos th[colspan="2"]:nth-of-type(3),
+.t4-table thead tr.t4-head-grupos th[colspan="2"]:nth-of-type(5),
+.t4-table thead tr.t4-head-slots th:nth-child(4n+3),
+.t4-table thead tr.t4-head-slots th:nth-child(4n+4),
+.t4-table tbody tr.grupo-start td:nth-child(4n),
+.t4-table tbody tr.grupo-start td:nth-child(4n+1),
+.t4-table tbody tr:not(.grupo-start) td:nth-child(4n+3),
+.t4-table tbody tr:not(.grupo-start) td:nth-child(4n+4){
+  background-color:var(--zebra-noturno-suave);
+}
+
+/* T4: borda canônica única */
+.t4-table th,
+.t4-table td{
+  border:1px solid var(--s03-cell-border);
+  box-shadow:none;
+}
+
+/* T4: gaps verticais estruturais de 2px */
+.t4-table thead tr.t4-head-grupos th,
+.t4-table tbody tr:nth-child(5) td,
+.t4-table tbody tr:nth-child(n+8):nth-child(-n+11) td{
+  border-bottom-color:var(--s03-t4-gap-border);
+}
+
+.t4-table thead tr.t4-head-slots th,
+.t4-table tbody tr:nth-child(6) td,
+.t4-table tbody tr:nth-child(n+9):nth-child(-n+12) td{
+  border-top:3px solid #fff;
+  box-shadow:inset 0 1px 0 var(--s03-t4-gap-border);
+}
+
+/* T4: bordas internas quase transparentes, mesmo padrão da T2 */
+.t4-table tbody tr:nth-child(1) td,
+.t4-table tbody tr:nth-child(2) td,
+.t4-table tbody tr:nth-child(3) td,
+.t4-table tbody tr:nth-child(4) td,
+.t4-table tbody tr:nth-child(6) td,
+.t4-table tbody tr:nth-child(7) td{
+  border-bottom:.1px solid rgba(100,116,139,.025);
+}
+
+.t4-table tbody tr:nth-child(2) td,
+.t4-table tbody tr:nth-child(3) td,
+.t4-table tbody tr:nth-child(4) td,
+.t4-table tbody tr:nth-child(5) td,
+.t4-table tbody tr:nth-child(7) td,
+.t4-table tbody tr:nth-child(8) td{
+  border-top:.1px solid rgba(100,116,139,.025);
+}
+
+/* T4: borda inferior das células mescladas da 1ª coluna */
+.t4-table tbody tr:nth-child(1) td.posto-cell[rowspan],
+.t4-table tbody tr:nth-child(6) td.posto-cell[rowspan]{
+  border-bottom-color:var(--s03-t4-gap-border);
+}
+
+.t2-table tbody tr.posto-faixa.posto-faixa-a td,
+.t4-table tbody tr.posto-faixa.posto-faixa-a td{
+  background:#fef3c7 !important;
+}
+
+.t2-table tbody tr.posto-faixa.posto-faixa-b td,
+.t4-table tbody tr.posto-faixa.posto-faixa-b td{
+  background:#e0f2fe !important;
+}
+
+.t2-table tbody tr.posto-faixa .posto-cell,
+.t4-table tbody tr.posto-faixa .posto-cell{
+  color:#1e3a5f;
+  font-weight:900;
+}
+
+/* —— T5 NOTURNO: Vivências, mesmo desenho da T3 com cores da T4 —— */
+.t5-table{width:max-content;min-width:85px}
+.t5-table col{width:85px}
+
+.t5-table.turno-noturno thead th{
+  color:var(--turno-noturno-text);
+}
+
+.t5-table thead th:nth-child(1),
+.t5-table thead th:nth-child(3),
+.t5-table thead th:nth-child(5),
+.t5-table tbody td:nth-child(1),
+.t5-table tbody td:nth-child(3),
+.t5-table tbody td:nth-child(5){background:var(--zebra-noturno-claro)}
+
+.t5-table thead th:nth-child(2),
+.t5-table thead th:nth-child(4),
+.t5-table tbody td:nth-child(2),
+.t5-table tbody td:nth-child(4){background:var(--zebra-noturno-suave)}
+
+.t5-table tbody tr + tr td{
+  border-top:.1px solid rgba(100,116,139,.025);
+  border-bottom:.1px solid rgba(100,116,139,.025);
+}
+
+.t5-table tbody tr:nth-child(1) td{
+  border-bottom:.1px solid rgba(100,116,139,.025);
+}
+
+.t5-table tbody tr:last-child td{
+  border-bottom:1px solid var(--s03-cell-border);
+}
+
+/* Estado padrao dos botoes */
+button:disabled,
+.sv-crud-btn:disabled,
+.sv-clear:disabled,
+.sv-toolbar button:disabled,
+.sv-card-title .sv-toggle:disabled{
+  border-color:var(--btn-state-off-border) !important;
+  background:var(--btn-state-off-bg) !important;
+  color:var(--btn-state-off-text) !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+  cursor:default !important;
+}
+
+.lp.lp-v9-efetivo .srv-filtro-v9{
+  border-color:var(--btn-state-off-border) !important;
+  background:var(--btn-state-off-bg) !important;
+  color:var(--btn-state-off-text) !important;
+}
+
+#mainHeader .top-tab.active,
+.lp.lp-v9-efetivo .srv-filtro-v9.active,
+.config-tab.active,
+.config-menu-link.active,
+.previa-side-btn.active{
+  border-color:var(--btn-state-active-border) !important;
+  background:var(--btn-state-active-bg) !important;
+  color:var(--btn-state-active-text) !important;
+}
+
+.config-tabs{
+  background:#eef3fb !important;
+  border-left:1px solid #c7d4e8;
+  border-right:1px solid #c7d4e8;
+}
+
+.config-tab{
+  background:#dbe6f5 !important;
+  color:#1e3a5f !important;
+  border:1px solid #b9c9df !important;
+  border-bottom:0 !important;
+}
+
+.config-tab.active{
+  background:#ffffff !important;
+  color:#0f2f5f !important;
+  border-color:#8fb1dc !important;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.ppf{
+  background:#eef4ff !important;
+  color:#5f7fbf !important;
+  border-color:#9db6e2 !important;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.fpn{
+  background:#fff0f0 !important;
+  color:#b05b5b !important;
+  border-color:#dea0a0 !important;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.ppf.active{
+  background:var(--ppf-ui-bg) !important;
+  color:var(--ppf-ui-text) !important;
+  border-color:#2457b5 !important;
+}
+
+.lp.lp-v9-efetivo .lp-force-btn.fpn.active{
+  background:var(--fpn-ui-bg) !important;
+  color:var(--fpn-ui-text) !important;
+  border-color:#8b1a1a !important;
+}

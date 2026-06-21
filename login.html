@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#1e3a5f"/>
+<title>Escala Plantão - Login</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0c2d6b 0%, #1a4a9a 100%);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.login-header {
+  margin-bottom: 30px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0c2d6b;
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #6b6152;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e1a12;
+  text-transform: uppercase;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 1px solid #c8bfaa;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fffdf7;
+  color: #1e1a12;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #0c2d6b;
+  box-shadow: 0 0 0 3px rgba(12, 45, 107, 0.1);
+}
+
+.form-input.error {
+  border-color: #dc2626;
+}
+
+.error-message {
+  font-size: 12px;
+  color: #dc2626;
+  min-height: 16px;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
+}
+
+.login-button {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #0c2d6b 0%, #1a4a9a 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.1s;
+  text-transform: uppercase;
+}
+
+.login-button:hover {
+  opacity: 0.9;
+}
+
+.login-button:active {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #6b6152;
+}
+
+.logo-text {
+  font-size: 24px;
+  color: #0c2d6b;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-header">
+    <div class="logo-text">🔐 ACESSO</div>
+    <h1 class="login-title">Escala Plantão</h1>
+    <p class="login-subtitle">Sistema de Gestão da Escala</p>
+  </div>
+  
+  <form class="login-form" id="loginForm">
+    <div class="form-group">
+      <label for="accessCode" class="form-label">Código de Acesso</label>
+      <input
+        type="password"
+        id="accessCode"
+        class="form-input"
+        placeholder="Digite o código de acesso"
+        autocomplete="off"
+        autofocus
+      />
+      <div class="error-message" id="errorMessage">Código de acesso inválido</div>
+    </div>
+    
+    <button type="submit" class="login-button" id="loginBtn">ENTRAR</button>
+  </form>
+  
+  <div class="login-footer">
+    <p>© 2026 Escala Plantão - Todos os direitos reservados</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const CORRECT_CODE = "2009";
+  const SESSION_KEY = "escala_auth_session";
+  const ENTRY_KEY = "escala_auth_entry";
+  const AUTH_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  
+  function isAuthValid() {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (!stored) return false;
+    
+    try {
+      const data = JSON.parse(stored);
+      const now = Date.now();
+      
+      if (now - data.timestamp > AUTH_TIMEOUT) {
+        sessionStorage.removeItem(SESSION_KEY);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  sessionStorage.removeItem(ENTRY_KEY);
+  
+  const form = document.getElementById("loginForm");
+  const codeInput = document.getElementById("accessCode");
+  const errorMessage = document.getElementById("errorMessage");
+  const loginBtn = document.getElementById("loginBtn");
+  
+  function login() {
+    const code = codeInput.value.trim();
+    
+    if (code === CORRECT_CODE) {
+      // Store authentication in session
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        authenticated: true,
+        timestamp: Date.now()
+      }));
+      sessionStorage.setItem(ENTRY_KEY, String(Date.now()));
+      
+      codeInput.classList.remove("error");
+      errorMessage.classList.remove("show");
+      
+      // Redirect to main application
+      window.location.href = "index.html";
+    } else {
+      codeInput.classList.add("error");
+      errorMessage.classList.add("show");
+      codeInput.value = "";
+      codeInput.focus();
+    }
+  }
+  
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    login();
+  });
+  
+  codeInput.addEventListener("input", function() {
+    if (this.value.length > 0) {
+      this.classList.remove("error");
+      errorMessage.classList.remove("show");
+    }
+  });
+})();
+</script>
+</body>
+</html>

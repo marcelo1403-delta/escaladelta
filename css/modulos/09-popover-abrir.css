@@ -1,0 +1,46 @@
+/* Popover abrir arquivo
+   Extraído de css_canonico_limpo.css linhas 4960-5001.
+*/
+
+/* Popover ABRIR - layout único de duas colunas */
+.gestao-pop.abrir{
+  width:310px !important;
+  overflow:hidden;
+}
+.gestao-pop.abrir .gestao-head{
+  height:30px !important;
+  box-sizing:border-box;
+}
+.gestao-pop.abrir .gestao-open-body{
+  grid-template-columns:130px 180px !important;
+}
+.gestao-pop.abrir .gestao-open-filter{
+  width:130px !important;
+  padding-left:15px !important;
+  padding-right:15px !important;
+}
+.gestao-pop.abrir .gestao-open-list{
+  width:180px !important;
+  box-sizing:border-box;
+  padding-left:15px !important;
+  padding-right:15px !important;
+  overflow:hidden !important;
+}
+.gestao-pop.abrir .gestao-table-wrap{
+  width:150px !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+}
+.gestao-pop.abrir .gestao-arquivo-table{
+  width:150px !important;
+  table-layout:fixed !important;
+}
+.gestao-pop.abrir .gestao-close{
+  margin-left:auto;
+  background:transparent;
+  color:#0e7490;
+  font-size:14px;
+  font-weight:900;
+  cursor:pointer;
+  line-height:20px;
+}

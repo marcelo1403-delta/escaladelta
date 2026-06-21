@@ -1,0 +1,316 @@
+/* Navbar canônica
+   Extraído de css_canonico_limpo.css linhas 70-320.
+*/
+
+/* —— Navbar (isolada com !important para não herdar conflitos globais depois) —— */
+#mainHeader.topo-unico{
+  height:50px !important;
+  min-height:50px !important;
+  max-height:50px !important;
+  background:#0c2d6b !important;
+  border-bottom:2px solid #1a4a9a !important;
+  display:grid !important;
+  grid-template-columns:auto 1fr auto !important;
+  align-items:stretch !important;
+  padding:0 12px !important;
+  position:relative !important;
+  z-index:9999 !important;
+  flex-shrink:0 !important;
+  gap:12px !important;
+  color:#fff !important;
+  font-family:Arial,sans-serif !important;
+}
+
+body.escala-encerrada #mainHeader.topo-unico{
+  background:#5f1414 !important;
+  border-bottom-color:#991b1b !important;
+}
+
+body.escala-encerrada #mainHeader .topo-centro::after{
+  content:"ENCERRADA";
+  height:24px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:10px;
+  padding:0 10px;
+  border:1px solid rgba(254,226,226,.7);
+  border-radius:4px;
+  background:rgba(254,226,226,.14);
+  color:#fee2e2;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.8px;
+}
+
+body.escala-encerrada:not(.escala-somente-leitura) #mainHeader .topo-centro::after{
+  content:"ENCERRADA - EDICAO";
+  border-color:rgba(253,230,138,.85);
+  background:rgba(253,230,138,.14);
+  color:#fde68a;
+}
+
+#mainHeader .topo-secao{
+  display:flex !important;
+  height:50px !important;
+  min-width:0 !important;
+}
+
+#mainHeader .topo-esquerda{justify-content:flex-start !important;align-items:flex-end !important}
+#mainHeader .topo-centro{justify-content:center !important;align-items:center !important}
+#mainHeader .topo-direita{
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:6px !important;
+  transform:translateX(-150px) !important;
+}
+
+#mainHeader .topo-tabs{
+  display:flex !important;
+  align-items:flex-end !important;
+  height:50px !important;
+}
+
+#mainHeader .top-tab{
+  height:50px !important;
+  min-height:50px !important;
+  max-height:50px !important;
+  padding:10px 22px 0 !important;
+  border:0 !important;
+  border-bottom:2px solid transparent !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:rgba(255,255,255,.55) !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  transition:color .15s,border-color .15s !important;
+}
+
+#mainHeader .top-tab:hover,
+#mainHeader .top-tab:not(.active):hover{
+  color:rgba(255,255,255,.85) !important;
+  background:transparent !important;
+}
+
+#mainHeader .top-tab.active{
+  color:#fff !important;
+  border-bottom-color:#7eb8ff !important;
+}
+
+#mainHeader .topo-centro-box{
+  height:30px !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+
+#mainHeader .topo-date-group{
+  height:28px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  border:1px solid rgba(255,255,255,.2) !important;
+  border-radius:4px !important;
+  background:rgba(255,255,255,.1) !important;
+  padding:0 8px !important;
+}
+
+#mainHeader .topo-date-picker,
+#mainHeader .topo-date-group .topo-date-picker{
+  width:112px !important;
+  min-width:112px !important;
+  height:26px !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#fff !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  outline:none !important;
+  pointer-events:none !important;
+}
+
+#mainHeader .topo-date-picker::-webkit-calendar-picker-indicator{
+  display:none !important;
+  opacity:0 !important;
+}
+
+#mainHeader .topo-dia-semana,
+#mainHeader .topo-date-group .topo-dia-semana{
+  width:126px !important;
+  min-width:126px !important;
+  max-width:126px !important;
+  height:26px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding-left:6px !important;
+  border-left:1px solid rgba(255,255,255,.18) !important;
+  color:rgba(255,255,255,.72) !important;
+  font-size:11px !important;
+  font-weight:700 !important;
+  white-space:nowrap !important;
+}
+
+#mainHeader .topo-plantao-box,
+#mainHeader .topo-fullscreen-btn{
+  height:30px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:4px !important;
+}
+
+#mainHeader .topo-plantao-box{
+  min-width:84px !important;
+  padding:0 14px !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+  background:rgba(255,255,255,.12) !important;
+  color:#e3b341 !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  letter-spacing:.5px !important;
+  text-transform:uppercase !important;
+  white-space:nowrap !important;
+}
+
+#mainHeader .topo-fullscreen-btn{
+  width:36px !important;
+  min-width:36px !important;
+  border:1px solid rgba(255,255,255,.2) !important;
+  background:rgba(255,255,255,.08) !important;
+  color:rgba(255,255,255,.7) !important;
+  font-size:22px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  line-height:1 !important;
+}
+
+#mainHeader .topo-action-btn{
+  height:28px !important;
+  padding:0 12px !important;
+  border:1px solid #2a4a8a !important;
+  border-radius:4px !important;
+  background:#1a2a4a !important;
+  color:#60a5fa !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  transition:opacity .15s,background .15s !important;
+}
+
+#mainHeader #btnNovoTop{
+  background:#1a4a20 !important;
+  color:#4ade80 !important;
+  border-color:#2d6a30 !important;
+}
+
+#mainHeader .topo-action-btn:hover,
+#mainHeader .topo-fullscreen-btn:hover{
+  opacity:.85 !important;
+  background:rgba(255,255,255,.18) !important;
+  color:#fff !important;
+}
+
+#mainHeader #btnGravarTop.is-disabled,
+#mainHeader #btnGravarTop.is-readonly-blocked{
+  border-color:#64748b !important;
+  background:#334155 !important;
+  color:#cbd5e1 !important;
+  opacity:.78 !important;
+  cursor:not-allowed !important;
+}
+
+#mainHeader #btnGravarTop.is-readonly-blocked:hover{
+  border-color:#b45309 !important;
+  background:#451a03 !important;
+  color:#fde68a !important;
+  opacity:1 !important;
+}
+
+#mainHeader #btnNovoTop:hover{
+  background:#24602b !important;
+  color:#86efac !important;
+}
+
+#mainHeader .topo-menu-wrap{
+  position:relative !important;
+  display:inline-flex !important;
+}
+
+#mainHeader .topo-outros-menu{
+  position:absolute !important;
+  top:34px !important;
+  right:0 !important;
+  z-index:10000 !important;
+  min-width:128px !important;
+  display:none !important;
+  flex-direction:column !important;
+  padding:4px !important;
+  border:1px solid rgba(96,165,250,.35) !important;
+  border-radius:4px !important;
+  background:#0f1d34 !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.28) !important;
+}
+
+#mainHeader .topo-outros-menu.is-open{
+  display:flex !important;
+}
+
+#mainHeader .topo-outros-item{
+  height:28px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  padding:0 10px !important;
+  border:0 !important;
+  border-radius:3px !important;
+  background:transparent !important;
+  color:#bfdbfe !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  cursor:pointer !important;
+  text-align:left !important;
+}
+
+#mainHeader .topo-outros-item[hidden]{
+  display:none !important;
+}
+
+#mainHeader .topo-outros-item:hover{
+  background:rgba(96,165,250,.18) !important;
+  color:#fff !important;
+}
+
+#mainHeader .topo-outros-item.is-disabled,
+#mainHeader .topo-outros-item[aria-disabled="true"]{
+  color:#64748b !important;
+  cursor:not-allowed !important;
+  opacity:.65 !important;
+}
+
+#mainHeader .topo-outros-item.is-disabled:hover,
+#mainHeader .topo-outros-item[aria-disabled="true"]:hover{
+  background:transparent !important;
+  color:#64748b !important;
+}
+
+#mainHeader .topo-outros-item.btn-excluir-plantao{
+  color:#fecaca !important;
+}
+
+body:not(.aba-escala-ativa) #mainHeader .topo-direita{display:none !important}
+
+#mainHeader .topo-action-btn:first-child{border-radius:4px 0 0 4px !important}
+#mainHeader .topo-action-btn:last-child{border-radius:0 4px 4px 0 !important}
+
+@media (max-width:1050px){
+  #mainHeader.topo-unico{padding-left:10px !important;padding-right:10px !important;gap:8px !important}
+  #mainHeader .topo-centro-box{transform:scale(.92);transform-origin:center center}
+  #mainHeader .topo-action-btn{padding:0 7px !important}
+}

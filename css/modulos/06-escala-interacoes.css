@@ -1,0 +1,577 @@
+/* Interações da escala e popover de limpar
+   Extraído de css_canonico_limpo.css linhas 1636-2134.
+*/
+
+.s03-table td.s03-drop-hover{
+  outline:2px solid rgba(37,99,235,.45);
+  outline-offset:-2px;
+  background:#dbeafe !important;
+}
+
+.s03-table td.s03-drop-blocked{
+  outline:2px solid rgba(220,38,38,.55);
+  outline-offset:-2px;
+  background:#fee2e2 !important;
+}
+
+.s03-table td.s03-drop-blocked:not(.s03-force-warning)::after{
+  content:"🚫";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  line-height:1;
+  pointer-events:none;
+  z-index:3;
+}
+
+.s03-table td.s03-force-warning{
+  color:#991b1b;
+  font-size:9px;
+  font-weight:900;
+  text-align:center;
+}
+
+.s03-table td.s03-cell-selected{
+  outline:2px solid rgba(15,118,110,.55);
+  outline-offset:-2px;
+  cursor:grab;
+}
+
+.s03-table td.s03-cell-multi-selected{
+  outline:2px solid rgba(15,118,110,.55);
+  outline-offset:-2px;
+  background:rgba(56,189,248,.12);
+}
+
+.s03-table td.s03-alocar-cell-selected{
+  outline:2px solid rgba(22,163,74,.72);
+  outline-offset:-2px;
+  background:#dcfce7 !important;
+}
+
+.s03-table td.s03-col-source{
+  outline:2px solid rgba(37,99,235,.55);
+  outline-offset:-2px;
+  background:#dbeafe !important;
+  cursor:grab;
+}
+
+.s03-table td.s03-col-dest{
+  outline:2px dashed rgba(22,163,74,.62);
+  outline-offset:-2px;
+  background:#ecfdf5 !important;
+}
+
+.s03-multi-action-indicator{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  background:rgba(15,118,110,.92);
+  color:#fff;
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  box-shadow:0 6px 14px rgba(2,6,23,.3);
+  z-index:1200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  min-width:48px;
+  min-height:48px;
+  cursor:grab;
+}
+
+.s03-multi-action-ghost{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(15,118,110,.95);
+  color:#fff;
+  font-size:18px;
+  font-weight:700;
+}
+
+.s03-table td.s03-col-blocked{
+  outline:2px dashed rgba(220,38,38,.62);
+  outline-offset:-2px;
+  background:#fee2e2 !important;
+  color:#991b1b;
+}
+
+.s03-table td.s03-col-active,
+.s03-table td.s03-col-hover{
+  outline:3px solid rgba(15,118,110,.75);
+  outline-offset:-3px;
+  background:#ccfbf1 !important;
+}
+
+.s03-table td.s03-table-clear-selected{
+  outline:3px solid rgba(220,38,38,.75);
+  outline-offset:-3px;
+  background:#fee2e2 !important;
+}
+
+.s03-tool-edicao .s03-action-btn.is-disabled{
+  opacity:.45;
+  cursor:pointer;
+}
+
+.s03-tool-edicao .s03-action-btn.is-unavailable,
+.s03-tool-edicao .s03-action-btn:disabled{
+  opacity:.32;
+  cursor:not-allowed;
+}
+
+.s03-table .s03-alocado{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  padding-left:5px;
+  padding-right:2px;
+  box-sizing:border-box;
+  text-align:left;
+  position:relative;
+}
+
+.s03-table .s03-alocado::before{
+  content:"";
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#111;
+  flex:0 0 4px;
+}
+
+.s03-table .s03-alocado-nome{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.s03-table .s03-alocado-actions{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  padding:0 4px;
+  box-sizing:border-box;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .12s ease;
+  z-index:1;
+}
+
+.s03-table td:hover .s03-alocado-actions{
+  opacity:1;
+  pointer-events:auto;
+}
+
+body.s03-lista-mode .s03-table td:hover .s03-alocado-actions{
+  opacity:0;
+  pointer-events:none;
+}
+
+/* Oculta os botões de ação nas células para teste apenas de comandos de teclado */
+.s03-table .s03-alocado-actions{
+  display:none !important;
+}
+
+.s03-table td:hover .s03-alocado-nome{
+  opacity:.28;
+}
+
+.s03-table .s03-alocado-actions button{
+  width:18px;
+  height:14px;
+  border:1px solid #cbd5e1;
+  border-radius:2px;
+  background:rgba(248,250,252,.94);
+  color:#334155;
+  font-size:8px;
+  line-height:12px;
+  padding:0;
+  user-select:none;
+  -webkit-user-drag:none;
+  touch-action:none;
+}
+
+.s03-table .s03-alocado-actions button[data-s03-cell-action="move"],
+.s03-table .s03-alocado-actions button[data-s03-cell-action="copy"]{
+  cursor:grab;
+}
+
+/* FPN em T2/T4: restaura a borda original da célula.
+   Diferença visual mantida apenas no conteúdo alocado: cor do nome e da bolinha. */
+#tbl-T2 td[data-forca="FPN"] .s03-alocado-nome,
+#tbl-T4 td[data-forca="FPN"] .s03-alocado-nome{
+  color:var(--fpn-ui-text) !important;
+  font-size:inherit !important;
+  font-weight:inherit !important;
+  line-height:inherit !important;
+}
+#tbl-T2 td[data-forca="FPN"] .s03-alocado::before,
+#tbl-T4 td[data-forca="FPN"] .s03-alocado::before{
+  background:var(--fpn-ui-text) !important;
+}
+
+.s03-table td{
+  position:relative;
+}
+
+.s03-cell-select{
+  position:absolute;
+  right:2px;
+  top:2px;
+  width:18px;
+  max-width:calc(100% - 4px);
+  height:14px;
+  opacity:0;
+  border:1px solid rgba(37,99,235,.35);
+  border-radius:2px;
+  background:#fff;
+  color:#0f172a;
+  font-size:9px;
+  z-index:5;
+}
+
+.s03-table td:hover > .s03-cell-select,
+.s03-table td.s03-dropdown-open > .s03-cell-select,
+.s03-cell-select:focus{
+  width:calc(100% - 4px);
+  opacity:1;
+}
+
+.s03-cell-picker{
+  position:absolute;
+  left:2px;
+  right:2px;
+  top:2px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:2px;
+  z-index:6;
+}
+
+.s03-cell-picker-floating{
+  position:fixed;
+  left:auto;
+  right:auto;
+  top:auto;
+  display:block;
+  max-height:276px;
+  padding:3px;
+  border:1px solid rgba(37,99,235,.35);
+  border-radius:4px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(15,23,42,.22);
+  z-index:9999;
+  box-sizing:border-box;
+}
+
+.s03-table td.s03-dropdown-target{
+  outline:2px solid #2563eb;
+  outline-offset:-2px;
+  box-shadow:inset 0 0 0 2px rgba(37,99,235,.22);
+}
+
+.s03-table td.s03-dropdown-preview{
+  outline:none;
+}
+
+.s03-cell-dropdown-preview{
+  position:absolute;
+  inset:3px 4px 3px 4px;
+  pointer-events:none;
+  border:1px solid rgba(37,99,235,.35);
+  border-radius:3px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 0 0 1px rgba(37,99,235,.12);
+  z-index:4;
+}
+
+.s03-cell-dropdown-preview::after{
+  content:"";
+  position:absolute;
+  right:8px;
+  top:40%;
+  width:8px;
+  height:8px;
+  border-left:2px solid #2563eb;
+  border-bottom:2px solid #2563eb;
+  transform:translateY(-50%) rotate(-45deg);
+}
+
+.s03-cell-force-tabs{
+  display:flex;
+  gap:1px;
+}
+
+.s03-cell-force-tabs button{
+  height:14px;
+  min-width:24px;
+  padding:0 3px;
+  border:1px solid rgba(37,99,235,.35);
+  background:#f8fafc;
+  color:#1e3a5f;
+  font-size:8px;
+  font-weight:800;
+  line-height:12px;
+}
+
+.s03-cell-force-tabs button.active{
+  background:#1e3a5f;
+  color:#fff;
+}
+
+.s03-cell-picker .s03-cell-select{
+  position:static;
+  width:100%;
+  max-width:none;
+  opacity:1;
+}
+
+.s03-cell-name-list{
+  max-height:236px;
+  margin-top:3px;
+  overflow:auto;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:3px;
+  background:#fff;
+}
+
+.s03-cell-picker-single .s03-cell-name-list{
+  margin-top:0;
+}
+
+.s03-cell-name-list button,
+.s03-cell-name-empty{
+  display:block;
+  width:100%;
+  min-height:18px;
+  padding:2px 5px;
+  border:0;
+  border-bottom:1px solid rgba(15,23,42,.08);
+  background:#fff;
+  color:#0f172a;
+  font-size:9px;
+  font-weight:800;
+  line-height:13px;
+  text-align:left;
+  white-space:normal;
+  cursor:pointer;
+}
+
+.s03-cell-name-list button:hover,
+.s03-cell-name-list button:focus,
+.s03-cell-name-list button.is-match{
+  background:#e0f2fe;
+  outline:0;
+}
+
+.s03-cell-name-empty{
+  color:#64748b;
+  cursor:default;
+}
+
+/* Células de posto INATIVO — bloqueadas para alocação */
+.s03-table td.s03-posto-inativo{
+  background:repeating-linear-gradient(
+    135deg,
+    rgba(148,163,184,.10) 0px,
+    rgba(148,163,184,.10) 3px,
+    transparent 3px,
+    transparent 8px
+  ) !important;
+  cursor:not-allowed;
+}
+
+.s03-table td.s03-posto-inativo-hover{
+  position:relative;
+}
+
+.s03-table td.s03-posto-inativo-hover:hover::after{
+  content:"⊘";
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(255,255,255,.82);
+  color:rgba(185,28,28,.55);
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  font-weight:900;
+  line-height:18px;
+}
+
+#eftCanonicoBody tr[draggable="true"]{
+  cursor:grab;
+}
+
+.drag-nome-ghost{
+  position:fixed;
+  left:-9999px;
+  top:-9999px;
+  pointer-events:none;
+  padding:4px 8px;
+  border:1px solid #0d9488;
+  border-radius:4px;
+  background:#0f766e;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  box-shadow:0 4px 12px rgba(15,23,42,.18);
+}
+
+.s03-clear-popover{
+  position:fixed;
+  inset:0;
+  z-index:9200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(15,23,42,.22);
+}
+
+.s03-clear-popover.is-open{display:flex}
+
+.s03-clear-box{
+  width:280px;
+  border:1px solid #cbd5e1;
+  border-radius:6px;
+  background:#fff;
+  box-shadow:0 14px 36px rgba(15,23,42,.22);
+  overflow:hidden;
+}
+
+.s03-clear-title{
+  height:30px;
+  padding:0 10px;
+  background:#991b1b;
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  line-height:30px;
+}
+
+.s03-clear-msg{
+  padding:18px 14px;
+  color:#334155;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+
+.s03-clear-actions{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  padding:0 12px 14px;
+}
+
+.s03-clear-actions button{
+  height:24px;
+  min-width:86px;
+  border:1px solid #cbd5e1;
+  border-radius:3px;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.file-popover .s03-clear-box{
+  width:340px;
+  padding-bottom:5px;
+}
+
+
+/* NOVO: dropdown como método padrão + modo EDITAR Excel-like */
+body.s03-edit-mode .s03-table tbody td:not(.posto-cell){ cursor: cell; }
+body:not(.s03-edit-mode) .s03-table tbody td:not(.posto-cell):not(.s03-posto-inativo){ cursor: pointer; }
+.s03-cell-multi-selected{ outline:2px solid #2563eb; outline-offset:-2px; background:#dbeafe !important; }
+.s03-cell-cut{ opacity:.55; outline:2px dashed #b45309; outline-offset:-2px; }
+.s03-cell-empty-option{ font-weight:700; color:#991b1b; background:#fff1f2; }
+.s03-cell-force-heading{ font-size:10px; font-weight:800; color:#475569; background:#f1f5f9; padding:4px 6px; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; position:sticky; top:0; }
+.s03-repeat-popover{ position:fixed; z-index:99999; width:220px; background:#fff; border:1px solid #94a3b8; box-shadow:0 8px 24px rgba(15,23,42,.25); border-radius:8px; padding:8px; font:12px Arial,sans-serif; }
+.s03-repeat-title{ font-weight:800; color:#1e3a8a; margin-bottom:6px; }
+.s03-repeat-origin{ font-size:11px; color:#475569; margin-bottom:6px; }
+.s03-repeat-list{ max-height:150px; overflow:auto; display:grid; gap:4px; }
+.s03-repeat-list label{ display:flex; gap:6px; align-items:center; }
+.s03-repeat-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+.s03-repeat-actions button{ height:24px; border:1px solid #64748b; border-radius:6px; background:#f8fafc; font-weight:700; font-size:11px; }
+
+
+/* NOVO: somente o botão EDITAR fica visível quando o modo edição está desligado. */
+body:not(.s03-edit-mode) .s03-tool-edicao .s03-action-btn:not([data-s03-tool="editar"]){
+  display:none;
+}
+body.s03-edit-mode .s03-tool-edicao .s03-action-btn{
+  display:inline-flex;
+}
+
+/* NOVO: opção vazia da dropdown aparece como linha em branco, sem texto "VAZIO". */
+.s03-cell-empty-option{
+  min-height:22px;
+  color:transparent;
+  background:#fff;
+  border-bottom:1px dashed #cbd5e1;
+}
+.s03-cell-empty-option::before{
+  content:"";
+  display:block;
+  height:1em;
+}
+
+/* NOVO: Efetivo sem mão/arrastar, pois a alocação é feita pela dropdown da célula. */
+#eftCanonicoBody tr,
+#eftCanonicoBody tr[draggable="true"]{
+  cursor:default;
+}
+
+/* Dropdown de alocação ancorada na própria célula */
+.s03-table td.s03-dropdown-open{
+  overflow:visible !important;
+  z-index:50;
+}
+
+.s03-table td.s03-dropdown-open .s03-alocado{
+  pointer-events:none;
+}
+
+.s03-cell-picker-in-cell{
+  position:absolute;
+  left:0;
+  top:100%;
+  right:auto;
+  display:block;
+  min-width:136px;
+  max-height:276px;
+  padding:3px;
+  border:1px solid rgba(37,99,235,.35);
+  border-radius:4px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(15,23,42,.22);
+  z-index:9999;
+  box-sizing:border-box;
+}
+
+.s03-cell-picker-in-cell .s03-cell-name-list{
+  max-height:236px;
+}

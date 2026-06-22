@@ -133,8 +133,7 @@ var acionarFerramentaEscala=(btn,event)=>{
   if(!btn||btn.disabled)return;
   event?.preventDefault?.();
   var tool=btn.dataset.s03Tool;
-  if(tool==="editar")setModoEditarEscala(!modoEditarEscala);
-  else if(tool==="alocar")setModoAlocar(!modoAlocarAtivo); // LEGADO comentado no HTML: mantido por compatibilidade.
+  if(tool==="alocar")setModoAlocar(!modoAlocarAtivo); // LEGADO comentado no HTML: mantido por compatibilidade.
   else if(tool==="lista")setModoDropdownEscala(!modoDropdownEscala); // LEGADO comentado no HTML: mantido por compatibilidade.
   else if(tool==="recortar")copiarSelecaoEscala(true);
   else if(tool==="copiar")copiarSelecaoEscala(false);
@@ -205,25 +204,16 @@ document.addEventListener("keydown",(event)=>{
     if(key==="x"||key==="c"||key==="v"){
       event.preventDefault();
       event.stopPropagation();
-      if(!modoEditarEscala)setModoEditarEscala(true);
-      if(key==="x")copiarSelecaoEscala(true);
+      if(key==="x"&&event.shiftKey)trocarVetoresEscala();
+      else if(key==="x")copiarSelecaoEscala(true);
       else if(key==="c")copiarSelecaoEscala(false);
       else if(key==="v")colarClipboardEscala(document.activeElement?.closest?.(".s03-table tbody td"));
     }
     return;
   }
-  // LEGADO: M/C por teclado para ações antigas só fica disponível no modo EDITAR.
-  if(!modoEditarEscala||event.altKey)return;
-  if(key!=="c"&&key!=="m")return;
-  var selecoes=obterSelecoesCelulaEscala();
-  if(selecoes.length<=1)return;
-  event.preventDefault();
-  event.stopPropagation();
-  prepararAcaoCelulasEscala(selecoes,key==="m"?"move":"copy");
 },true);
 document.addEventListener("keydown",(event)=>{
   if(event.key!=="Escape")return;
-  if(modoEditarEscala)setModoEditarEscala(false);
   if(modoAlocarAtivo)setModoAlocar(false);
   if(modoDropdownEscala)setModoDropdownEscala(false);
   if(modoColunaEscala)limparEstadoColunaEscala();

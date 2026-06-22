@@ -502,23 +502,20 @@ body.s03-lista-mode .s03-table td:hover .s03-alocado-actions{
 }
 
 
-/* NOVO: dropdown como método padrão + modo EDITAR Excel-like */
-body.s03-edit-mode .s03-table tbody td:not(.posto-cell){ cursor: cell; }
-body:not(.s03-edit-mode) .s03-table tbody td:not(.posto-cell):not(.s03-posto-inativo){ cursor: pointer; }
+/* Dropdown no corpo da celula + alca de selecao no canto superior esquerdo. */
+.s03-table tbody td:not(.posto-cell):not(.s03-posto-inativo){ cursor:pointer; position:relative; }
+.s03-table tbody td:not(.posto-cell):not(.s03-posto-inativo)::before{
+  content:""; position:absolute; z-index:6; top:2px; left:2px; width:8px; height:8px;
+  border:1px solid #2563eb; border-radius:2px; background:#fff; opacity:0;
+  box-sizing:border-box; transition:opacity .12s ease,background .12s ease;
+}
+.s03-table tbody td:not(.posto-cell):not(.s03-posto-inativo):hover::before,
+.s03-table tbody td.s03-cell-multi-selected::before{opacity:1;}
+.s03-table tbody td.s03-cell-multi-selected::before{background:#2563eb;}
 .s03-cell-multi-selected{ outline:2px solid #2563eb; outline-offset:-2px; background:#dbeafe !important; }
 .s03-cell-cut{ opacity:.55; outline:2px dashed #b45309; outline-offset:-2px; }
 .s03-cell-empty-option{ font-weight:700; color:#991b1b; background:#fff1f2; }
 .s03-cell-force-heading{ font-size:10px; font-weight:800; color:#475569; background:#f1f5f9; padding:4px 6px; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; position:sticky; top:0; }
-.s03-cell-swap-source{ outline:2px dashed #7c3aed !important; outline-offset:-2px; background:#ede9fe !important; }
-
-
-/* NOVO: somente o botão EDITAR fica visível quando o modo edição está desligado. */
-body:not(.s03-edit-mode) .s03-tool-edicao .s03-action-btn:not([data-s03-tool="editar"]){
-  display:none;
-}
-body.s03-edit-mode .s03-tool-edicao .s03-action-btn{
-  display:inline-flex;
-}
 
 /* NOVO: opção vazia da dropdown aparece como linha em branco, sem texto "VAZIO". */
 .s03-cell-empty-option{

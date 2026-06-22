@@ -7,10 +7,8 @@ var ignorarClickAcaoEscala=false;
 var modoAlocarAtivo=false;
 var selecaoAlocar=null;
 var modoDropdownEscala=false;
-// NOVO: modo padrão é alocação por dropdown; EDITAR só é ligado por toggle/atalho e inibe a dropdown.
-var modoEditarEscala=false;
+// Dropdown e seleção por alça coexistem, sem alternância de modo.
 var clipboardEscala=null;
-var trocaEscalaPendente=null;
 var selecaoArrastoEscala=null;
 var modoColunaEscala=null;
 var colunaOrigemEscala=null;
@@ -27,9 +25,7 @@ var cancelarSelecoesEdicaoEscala=()=>{
   limparAcaoCelulaEscala();
   selecaoArrastoEscala=null;
   document.querySelectorAll(".s03-cell-cut").forEach((td)=>td.classList.remove("s03-cell-cut"));
-  document.querySelectorAll(".s03-cell-swap-source").forEach((td)=>td.classList.remove("s03-cell-swap-source"));
   if(clipboardEscala?.recortar)clipboardEscala=null;
-  trocaEscalaPendente=null;
 };
 var INDICATOR_ID="s03-multi-action-indicator";
 var criarMultiActionIndicator=()=>{
@@ -91,7 +87,7 @@ var selecionarUnicaCelulaEscala=(td)=>{
   td?.focus?.({preventScroll:true});
 };
 var colunaGridEscala=(td)=>colunaAlocacao(td);
-var selecionarRangeCelulasEscala=(origem,alvo)=>{
+var selecionarRangeCelulasEscala=(origem,alvo,selecaoBase=[])=>{
   if(!celulaSelecionavelEscala(origem)||!celulaSelecionavelEscala(alvo))return;
   var table=origem.closest("table");
   if(!table||table!==alvo.closest("table"))return;
@@ -102,6 +98,7 @@ var selecionarRangeCelulasEscala=(origem,alvo)=>{
   var minRow=Math.min(rowA,rowB),maxRow=Math.max(rowA,rowB);
   var minCol=Math.min(colA,colB),maxCol=Math.max(colA,colB);
   limparSelecoesCelulaEscala();
+  Array.from(selecaoBase||[]).forEach(marcarSelecaoCelulaEscala);
   Array.from(table.tBodies[0]?.rows||[]).forEach((row)=>{
     var r=row.sectionRowIndex;
     if(r<minRow||r>maxRow)return;
@@ -519,7 +516,7 @@ var removerPreviewDropdownsEscala=()=>{
   });
 };
 var mostrarPreviewDropdownCelulaEscala=(td)=>{
-  if(modoEditarEscala||!td||td.querySelector(".s03-cell-picker")||td.classList.contains("s03-dropdown-open")||td.classList.contains("posto-cell")||td.classList.contains("s03-posto-inativo")||celulaChefePosto(td))return;
+  if(selecaoArrastoEscala||!td||td.querySelector(".s03-cell-picker")||td.classList.contains("s03-dropdown-open")||td.classList.contains("posto-cell")||td.classList.contains("s03-posto-inativo")||celulaChefePosto(td))return;
   var table=td.closest("table");
   if(!table||!forcasDropdownCelulaEscala(td).length)return;
   removerPreviewDropdownsEscala();
@@ -679,7 +676,7 @@ var montarListaNomesCelulaEscala=(picker,table,td,forcas,substituir)=>{
   picker.focus();
 };
 var mostrarDropdownCelulaEscala=(td,{substituir=false}={})=>{
-  if(modoEditarEscala||!td||td.querySelector(".s03-cell-select,.s03-cell-picker")||td.classList.contains("s03-dropdown-open")||td.classList.contains("posto-cell")||td.classList.contains("s03-posto-inativo")||celulaChefePosto(td))return;
+  if(!td||td.querySelector(".s03-cell-select,.s03-cell-picker")||td.classList.contains("s03-dropdown-open")||td.classList.contains("posto-cell")||td.classList.contains("s03-posto-inativo")||celulaChefePosto(td))return;
   var table=td.closest("table");
   var forcas=forcasDropdownCelulaEscala(td);
   if(!table||!forcas.length)return;
@@ -697,7 +694,6 @@ var mostrarDropdownCelulaEscala=(td,{substituir=false}={})=>{
   montarListaNomesCelulaEscala(picker,table,td,forcas,substituir);
 };
 var abrirDropdownModoLista=(event)=>{
-  if(modoEditarEscala)return;
   var td=event.currentTarget?.tagName==="TD"?event.currentTarget:event.target?.closest?.(".s03-table tbody td");
   if(!td){
     if(acaoCelulaEscala)limparAcaoCelulaEscala();
@@ -1151,27 +1147,22 @@ var finalizarPonteiroColunaEscala=(event)=>{
   setTimeout(()=>{ignorarClickColunaEscala=false;},0);
 };
 
-var setModoEditarEscala=(ativo)=>{
-  modoEditarEscala=Boolean(ativo);
-  document.body.classList.toggle("s03-edit-mode",modoEditarEscala);
-  document.querySelector(".s03-editar")?.classList.toggle("active",modoEditarEscala);
-  if(modoEditarEscala){
-    // LEGADO: alocar/lista/coluna ficam desativados no modo EDITAR para não conflitar com seleção Excel-like.
-    if(modoAlocarAtivo)setModoAlocar(false);
-    if(modoDropdownEscala)setModoDropdownEscala(false);
-    removerDropdownsEscala();
-  }else{
-    cancelarSelecoesEdicaoEscala();
-  }
+var ponteiroNaAlcaSelecaoEscala=(event,td)=>{
+  var rect=td?.getBoundingClientRect?.();
+  return Boolean(rect&&event.clientX>=rect.left&&event.clientX<=rect.left+16&&event.clientY>=rect.top&&event.clientY<=rect.top+16);
 };
 var iniciarSelecaoEditarEscala=(event)=>{
-  if(!modoEditarEscala||event.button!==0||event.target?.closest?.("[data-s03-cell-action]"))return false;
+  if(event.button!==0||event.target?.closest?.("[data-s03-cell-action]"))return false;
   var td=event.target?.closest?.(".s03-table tbody td");
-  if(!celulaSelecionavelEscala(td))return false;
+  if(!celulaSelecionavelEscala(td)||!ponteiroNaAlcaSelecaoEscala(event,td))return false;
   event.preventDefault();
   event.stopPropagation();
-  selecaoArrastoEscala={origem:td,atual:td,pointerId:event.pointerId};
-  if(event.ctrlKey||event.metaKey)toggleSelecaoCelulaEscala(td);else selecionarUnicaCelulaEscala(td);
+  removerPreviewDropdownsEscala();
+  removerDropdownsEscala();
+  var aditiva=Boolean(event.ctrlKey||event.metaKey);
+  var base=aditiva?new Set(obterSelecoesCelulaEscala()):new Set();
+  selecaoArrastoEscala={origem:td,atual:td,pointerId:event.pointerId,aditiva,base};
+  if(aditiva)toggleSelecaoCelulaEscala(td);else selecionarUnicaCelulaEscala(td);
   return true;
 };
 var atualizarSelecaoEditarEscala=(event)=>{
@@ -1179,12 +1170,12 @@ var atualizarSelecaoEditarEscala=(event)=>{
   var td=document.elementFromPoint(event.clientX,event.clientY)?.closest?.(".s03-table tbody td");
   if(td&&td!==selecaoArrastoEscala.atual&&celulaSelecionavelEscala(td)){
     selecaoArrastoEscala.atual=td;
-    selecionarRangeCelulasEscala(selecaoArrastoEscala.origem,td);
+    selecionarRangeCelulasEscala(selecaoArrastoEscala.origem,td,selecaoArrastoEscala.aditiva?selecaoArrastoEscala.base:[]);
   }
 };
 var finalizarSelecaoEditarEscala=(event)=>{
   if(!selecaoArrastoEscala||selecaoArrastoEscala.pointerId!==event.pointerId)return;
-  if(obterSelecoesCelulaEscala().length>1)ignorarClickAcaoEscala=true;
+  ignorarClickAcaoEscala=true;
   selecaoArrastoEscala=null;
 };
 var matrizSelecaoEscala=(tds)=>{
@@ -1236,9 +1227,9 @@ var colarClipboardEscala=(anchor=null)=>{
   var destMatrix=matrizSelecaoEscala(selecoesOrdenadasEscala());
   var dimensoesIguais=Boolean(destMatrix&&destMatrix.rows===clipboardEscala.rows&&destMatrix.cols===clipboardEscala.cols);
   var copiarUnitario=Boolean(destMatrix&&!clipboardEscala.recortar&&clipboardEscala.rows===1&&clipboardEscala.cols===1);
-  var repetirColuna=Boolean(destMatrix&&!clipboardEscala.recortar&&clipboardEscala.cols===1&&destMatrix.rows===clipboardEscala.rows);
+  var replicarColuna=Boolean(destMatrix&&!clipboardEscala.recortar&&clipboardEscala.cols===1&&destMatrix.rows===clipboardEscala.rows);
   var destinoMultiplo=Boolean(destMatrix&&selecoesCelulaEscala.size>1);
-  if(destinoMultiplo&&!dimensoesIguais&&!copiarUnitario&&!repetirColuna){
+  if(destinoMultiplo&&!dimensoesIguais&&!copiarUnitario&&!replicarColuna){
     showMultiActionIndicator("Destino incompatível");setTimeout(()=>hideMultiActionIndicator(),1200);return false;
   }
   var baseRow=destMatrix&&selecoesCelulaEscala.size>1?Math.min(...selecoesOrdenadasEscala().map((td)=>td.parentElement.sectionRowIndex)):destino.parentElement.sectionRowIndex;
@@ -1273,46 +1264,56 @@ var colarClipboardEscala=(anchor=null)=>{
   salvarLocalEmergencial();
   return true;
 };
-var tipoVetorSelecaoEscala=(matriz)=>{
-  if(!matriz)return "";
-  if(matriz.rows===1&&matriz.cols===1)return "unitario";
-  if(matriz.rows===1)return "horizontal";
-  if(matriz.cols===1)return "vertical";
-  return "";
+var indicesVetorContiguos=(valores)=>valores.every((valor,index)=>index===0||valor===valores[index-1]+1);
+var doisVetoresSelecionadosEscala=()=>{
+  var tds=selecoesOrdenadasEscala();
+  if(tds.length<2)return null;
+  var table=tds[0].closest("table");
+  if(!table||tds.some((td)=>td.closest("table")!==table))return null;
+
+  var porLinha=new Map();
+  tds.forEach((td)=>{
+    var linha=td.parentElement.sectionRowIndex;
+    if(!porLinha.has(linha))porLinha.set(linha,[]);
+    porLinha.get(linha).push(td);
+  });
+  if(porLinha.size===2){
+    var horizontais=Array.from(porLinha.entries()).sort((a,b)=>a[0]-b[0]).map(([,cells])=>cells.sort((a,b)=>colunaGridEscala(a)-colunaGridEscala(b)));
+    var colsA=horizontais[0].map(colunaGridEscala),colsB=horizontais[1].map(colunaGridEscala);
+    if(colsA.length===colsB.length&&indicesVetorContiguos(colsA)&&indicesVetorContiguos(colsB)){
+      return{table,direcao:"horizontal",vetorA:horizontais[0],vetorB:horizontais[1]};
+    }
+  }
+
+  var porColuna=new Map();
+  tds.forEach((td)=>{
+    var coluna=colunaGridEscala(td);
+    if(!porColuna.has(coluna))porColuna.set(coluna,[]);
+    porColuna.get(coluna).push(td);
+  });
+  if(porColuna.size===2){
+    var verticais=Array.from(porColuna.entries()).sort((a,b)=>a[0]-b[0]).map(([,cells])=>cells.sort((a,b)=>a.parentElement.sectionRowIndex-b.parentElement.sectionRowIndex));
+    var rowsA=verticais[0].map((td)=>td.parentElement.sectionRowIndex),rowsB=verticais[1].map((td)=>td.parentElement.sectionRowIndex);
+    if(rowsA.length===rowsB.length&&indicesVetorContiguos(rowsA)&&indicesVetorContiguos(rowsB)){
+      return{table,direcao:"vertical",vetorA:verticais[0],vetorB:verticais[1]};
+    }
+  }
+  return null;
 };
 var trocarVetoresEscala=()=>{
-  var tds=selecoesOrdenadasEscala();
-  var matriz=matrizSelecaoEscala(tds);
-  var direcao=tipoVetorSelecaoEscala(matriz);
-  if(!matriz||!direcao){
-    showMultiActionIndicator("Selecione um vetor horizontal ou vertical");
+  var selecao=doisVetoresSelecionadosEscala();
+  if(!selecao){
+    showMultiActionIndicator("Selecione dois vetores paralelos e do mesmo tamanho");
     setTimeout(()=>hideMultiActionIndicator(),1400);
     return false;
   }
-
-  if(!trocaEscalaPendente){
-    trocaEscalaPendente={matriz,direcao,tds:[...tds]};
-    tds.forEach((td)=>td.classList.add("s03-cell-swap-source"));
-    limparSelecoesCelulaEscala();
-    showMultiActionIndicator(`Troca: selecione outro vetor ${direcao} com ${matriz.entries.length} células`);
-    return true;
-  }
-
-  var origem=trocaEscalaPendente;
-  var mesmaTabela=origem.matriz.tableId===matriz.tableId;
-  var mesmoFormato=origem.direcao===direcao&&origem.matriz.rows===matriz.rows&&origem.matriz.cols===matriz.cols;
-  var sobreposto=tds.some((td)=>origem.tds.includes(td));
-  if(!mesmaTabela||!mesmoFormato||sobreposto){
-    showMultiActionIndicator(!mesmaTabela?"Troca somente na mesma tabela":sobreposto?"Vetores não podem se sobrepor":"Vetores incompatíveis");
-    setTimeout(()=>hideMultiActionIndicator(),1500);
-    return false;
-  }
-
-  var table=tds[0].closest("table");
+  var {table,vetorA,vetorB}=selecao;
+  var dadosA=vetorA.map((td)=>({nome:nomeCelulaEscala(td),forca:forcaCelulaEscala(td)}));
+  var dadosB=vetorB.map((td)=>({nome:nomeCelulaEscala(td),forca:forcaCelulaEscala(td)}));
   var operacoes=[];
-  origem.matriz.entries.forEach((item,index)=>operacoes.push({td:tds[index],item}));
-  matriz.entries.forEach((item,index)=>operacoes.push({td:origem.tds[index],item}));
-  var fontes=[...origem.tds,...tds];
+  dadosA.forEach((item,index)=>operacoes.push({td:vetorB[index],item}));
+  dadosB.forEach((item,index)=>operacoes.push({td:vetorA[index],item}));
+  var fontes=[...vetorA,...vetorB];
   if(!validarPlanoEdicaoEscala(table,operacoes,fontes)){
     showMultiActionIndicator("Troca inválida: verifique força, duplicidade ou célula protegida");
     setTimeout(()=>hideMultiActionIndicator(),1700);
@@ -1321,8 +1322,6 @@ var trocarVetoresEscala=()=>{
 
   fontes.forEach(limparCelulaEscala);
   operacoes.forEach(({td,item})=>preencherCelulaColuna(td,{nome:item.nome,forca:item.forca}));
-  document.querySelectorAll(".s03-cell-swap-source").forEach((td)=>td.classList.remove("s03-cell-swap-source"));
-  trocaEscalaPendente=null;
   limparSelecoesCelulaEscala();
   hideMultiActionIndicator();
   atualizarDisponibilidadeColuna();
@@ -1334,7 +1333,6 @@ var trocarVetoresEscala=()=>{
 var setModoAlocar=(ativo)=>{
   modoAlocarAtivo=Boolean(ativo);
   if(modoAlocarAtivo){
-    if(modoEditarEscala)setModoEditarEscala(false);
     setModoDropdownEscala(false);
     limparEstadoColunaEscala();
   }
@@ -1352,7 +1350,6 @@ var setModoAlocar=(ativo)=>{
 var setModoDropdownEscala=(ativo)=>{
   modoDropdownEscala=Boolean(ativo);
   if(modoDropdownEscala){
-    if(modoEditarEscala)setModoEditarEscala(false);
     if(modoAlocarAtivo)setModoAlocar(false);
     limparEstadoColunaEscala();
     limparAcaoCelulaEscala();
@@ -1377,19 +1374,7 @@ var clicarCelulaEscala=(event)=>{
   }
   var td=event.target.closest("td");
   var action=event.target.closest("[data-s03-cell-action]")?.dataset.s03CellAction;
-  var multiSelectKey=event.ctrlKey||event.metaKey;
-  if(modoEditarEscala&&!action&&multiSelectKey&&td&&!modoAlocarAtivo&& !acaoCelulaEscala){
-    if(celulaSelecionavelEscala(td)){
-      event.preventDefault();
-      event.stopPropagation();
-      toggleSelecaoCelulaEscala(td);
-      td.focus({preventScroll:true});
-    }
-    return;
-  }
-  if(!modoEditarEscala||!multiSelectKey){
-    if(!modoEditarEscala)limparSelecoesCelulaEscala();
-  }
+  if(!action)limparSelecoesCelulaEscala();
   if(modoColunaEscala&&!action){
     var alvo=alvoColunaEscala(event.target);
     if(alvo){
@@ -1402,7 +1387,7 @@ var clicarCelulaEscala=(event)=>{
     if(acaoCelulaEscala)limparAcaoCelulaEscala();
     return;
   }
-  if(!modoEditarEscala&&!action){
+  if(!action){
     event.preventDefault();
     event.stopPropagation();
     abrirDropdownModoLista(event);
@@ -1427,12 +1412,6 @@ var clicarCelulaEscala=(event)=>{
     return;
   }
   if(!action && !modoAlocarAtivo && !acaoCelulaEscala){
-    if(modoEditarEscala){
-      event.preventDefault();
-      event.stopPropagation();
-      selecionarUnicaCelulaEscala(td);
-      return;
-    }
     event.preventDefault();
     event.stopPropagation();
     removerPreviewDropdownsEscala();
@@ -1450,7 +1429,6 @@ var clicarCelulaEscala=(event)=>{
 };
 var prepararDragBotaoEscala=(event)=>{
   if(iniciarSelecaoEditarEscala(event))return;
-  if(modoEditarEscala)return;
   if(iniciarPonteiroColunaEscala(event))return;
   iniciarPonteiroAcaoEscala(event);
 };
@@ -1490,11 +1468,6 @@ var setupAlocacaoEscalas=()=>{
         td.addEventListener("dragend",finalizarDragCelulaEscala);
         td.addEventListener("dragenter",()=>{if(tdAvisoForca&&tdAvisoForca!==td)limparAvisoForcaRestrita(tdAvisoForca);});
         td.addEventListener("pointerenter",()=>{
-          if(modoEditarEscala){
-            removerPreviewDropdownsEscala();
-            removerDropdownsEscala();
-            return;
-          }
           var aberto=document.querySelector(".s03-cell-picker");
           if(aberto&&aberto._s03AnchorTd!==td){
             removerDropdownsEscala();

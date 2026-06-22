@@ -81,8 +81,11 @@
   function prepararPermutasIniciais() {
     servidores.forEach((s) => {
       if (norm(s.motivoausencia) !== "PERMUTA" || !s.substituto) return;
-      const sub = servidores.find((item) => norm(item.nomecurto) === norm(s.substituto));
-      if (!sub || sub.id_pgto_permuta) return;
+      const sub = servidorPorSubstituto(s.substituto);
+      if (!sub) return;
+
+      const idExistenteValido = s.id_pgto_permuta && sub.id_pgto_permuta === s.id_pgto_permuta;
+      if (sub.id_pgto_permuta && !idExistenteValido) return;
 
       const idPgto = s.id_pgto_permuta || `PGTO-${s.id}`;
       s.id_pgto_permuta = idPgto;
@@ -92,6 +95,29 @@
       sub.status_pgto = "PRESENTE";
       sub.plantao_pgto_permuta = s.plantao || "";
       sub.id_pgto_permuta = idPgto;
+    });
+
+    servidores.forEach((origem) => {
+      if (norm(origem.motivoausencia) !== "PERMUTA") return;
+      const sub = servidorPorSubstituto(origem.substituto);
+      const vinculoValido = Boolean(origem.id_pgto_permuta && sub
+        && sub.id_pgto_permuta === origem.id_pgto_permuta);
+      if (vinculoValido) return;
+      if (origem.id_pgto_permuta) limparVinculoPermuta(origem.id_pgto_permuta, origem.id);
+      origem.motivoausencia = "";
+      origem.substituto = "";
+      origem.infoausencia = "";
+      limparCamposPgtoPermuta(origem);
+    });
+
+    // Um pagamento sem uma origem PERMUTA com o mesmo codigo e um vinculo orfao.
+    servidores.forEach((s) => {
+      if (!s.id_pgto_permuta || norm(s.motivoausencia) === "PERMUTA") return;
+      const temOrigem = servidores.some((origem) => origem.id !== s.id
+        && origem.id_pgto_permuta === s.id_pgto_permuta
+        && norm(origem.motivoausencia) === "PERMUTA"
+        && servidorPorSubstituto(origem.substituto)?.id === s.id);
+      if (!temOrigem) limparCamposPgtoPermuta(s);
     });
 
     servidores.forEach((s) => {
@@ -281,6 +307,7 @@
       if (norm(s.status || "ATIVO") !== "ATIVO") return;
       if (!s.plantao) return;
       if (s.motivoausencia) return;
+      if (s.id_pgto_permuta) return;
       if (seen.has(nome)) return;
 
       seen.add(nome);
@@ -557,52 +584,61 @@
       const sub = servidorPorSubstituto(v.substituto);
       if (!sub) return fail("SUBSTITUTO NAO LOCALIZADO.");
       if (!sub.plantao) return fail("SUBSTITUTO SEM PLANTAO.");
+      if (sub.id_pgto_permuta && sub.id_pgto_permuta !== v.id_pgto_permuta) return fail("SUBSTITUTO JA VINCULADO A OUTRA PERMUTA.");
     }
 
     return v;
+  }
+
+  function limparCamposPgtoPermuta(s) {
+    if (!s) return;
+    s.plantao_pgto_permuta = "";
+    s.id_pgto_permuta = "";
+    s.status_pgto = "";
   }
 
   function limparVinculoPermuta(idPgto, excetoId) {
     if (!idPgto) return;
     servidores.forEach((s) => {
       if (s.id_pgto_permuta === idPgto && s.id !== excetoId) {
-        s.plantao_pgto_permuta = "";
-        s.id_pgto_permuta = "";
-        s.status_pgto = "";
-        s.motivoapoio = "";
-        s.jornada = "";
-        s.horario = "";
+        limparCamposPgtoPermuta(s);
       }
     });
   }
 
+  function removerEventoPermuta(idPgto) {
+    if (!idPgto) return;
+    servidores.forEach((s) => {
+      if (s.id_pgto_permuta !== idPgto) return;
+      if (norm(s.motivoausencia) === "PERMUTA") {
+        s.motivoausencia = "";
+        s.substituto = "";
+        s.infoausencia = "";
+      }
+      limparCamposPgtoPermuta(s);
+    });
+  }
+
   function aplicarPermuta(v, antigo) {
+    const querPermuta = norm(v.motivoausencia) === "PERMUTA" && Boolean(v.substituto);
+    const sub = querPermuta ? servidorPorSubstituto(v.substituto) : null;
+    if (querPermuta && !sub) {
+      msg("SUBSTITUTO NAO LOCALIZADO.", "erro");
+      return false;
+    }
+    if (sub?.id_pgto_permuta && sub.id_pgto_permuta !== antigo?.id_pgto_permuta) {
+      msg("SUBSTITUTO JA VINCULADO A OUTRA PERMUTA.", "erro");
+      return false;
+    }
+
     if (antigo?.id_pgto_permuta) limparVinculoPermuta(antigo.id_pgto_permuta, v.id);
 
-    const subAntigoNome = txt(antigo?.substituto || "");
-    if (subAntigoNome) {
-      const subAntigo = servidores.find((s) => norm(s.nomecurto) === norm(subAntigoNome));
-      if (subAntigo && subAntigo.id !== v.id) {
-        subAntigo.plantao_pgto_permuta = "";
-        subAntigo.id_pgto_permuta = "";
-        subAntigo.status_pgto = "";
-      }
-    }
-
     const atual = servidores.find((s) => s.id === v.id);
-    if (!atual) return;
+    if (!atual) return false;
 
-    if (norm(v.motivoausencia) !== "PERMUTA" || !v.substituto) {
-      atual.id_pgto_permuta = "";
-      atual.plantao_pgto_permuta = "";
-      atual.status_pgto = "";
-      return;
-    }
-
-    const sub = servidorPorSubstituto(v.substituto);
-    if (!sub) {
-      msg("SUBSTITUTO NAO LOCALIZADO.", "erro");
-      return;
+    if (!querPermuta) {
+      limparCamposPgtoPermuta(atual);
+      return true;
     }
 
     const idPgto = novoIdPgto();
@@ -611,6 +647,7 @@
     sub.id_pgto_permuta = idPgto;
     sub.status_pgto = "PRESENTE";
     sub.substituto = "";
+    return true;
   }
 
   function mudouSecao1(antigo, novo) {
@@ -641,7 +678,6 @@
 
     if (!isInsert) {
       antigo = servidores.find((s) => s.id === v.id);
-      if (antigo?.id_pgto_permuta) limparVinculoPermuta(antigo.id_pgto_permuta, v.id);
     }
 
     if (!isInsert && norm(v.status) === "INATIVO") {
@@ -716,7 +752,7 @@
     if (!alvo) return;
 
     confirmarRemocao(alvo.nomecurto || alvo.nome || id, () => {
-      if (alvo.id_pgto_permuta) limparVinculoPermuta(alvo.id_pgto_permuta, id);
+      if (alvo.id_pgto_permuta) removerEventoPermuta(alvo.id_pgto_permuta);
       servidores = servidores.filter((s) => s.id !== id);
       renderTable();
       clearForm();
@@ -1229,7 +1265,7 @@
     if (tipo === "permutante") {
       servidor.status_pgto = "AUSENTE";
     } else {
-      aplicarPermuta(servidor, antigo);
+      if (!aplicarPermuta(servidor, antigo)) return;
     }
     concluirAcaoEfetivo(pop);
   }
@@ -1305,7 +1341,7 @@
     servidor.motivoausencia = motivo;
     servidor.substituto = motivo === "PERMUTA" ? substituto : "";
     servidor.infoausencia = "";
-    aplicarPermuta(servidor, antigo);
+    if (!aplicarPermuta(servidor, antigo)) return;
     concluirAcaoEfetivo(pop);
   }
 
@@ -1322,7 +1358,7 @@
       return;
     }
 
-    if (tipo === "folgante" && servidor.id_pgto_permuta) limparVinculoPermuta(servidor.id_pgto_permuta, servidor.id);
+    if (tipo === "folgante" && servidor.id_pgto_permuta) removerEventoPermuta(servidor.id_pgto_permuta);
     servidor.motivoausencia = "";
     servidor.substituto = "";
     servidor.infoausencia = "";
@@ -1375,13 +1411,9 @@
       servidor.horario = "";
       return;
     }
-    if (row.tipo === "folgante" && servidor.id_pgto_permuta) limparVinculoPermuta(servidor.id_pgto_permuta, servidor.id);
+    if (row.tipo === "folgante" && servidor.id_pgto_permuta) removerEventoPermuta(servidor.id_pgto_permuta);
     if (row.tipo === "permutante") {
-      servidor.motivoausencia = "";
-      if (servidor.id_pgto_permuta) limparVinculoPermuta(servidor.id_pgto_permuta, servidor.id);
-      servidor.plantao_pgto_permuta = "";
-      servidor.id_pgto_permuta = "";
-      servidor.status_pgto = "";
+      if (servidor.id_pgto_permuta) removerEventoPermuta(servidor.id_pgto_permuta);
       return;
     }
     servidor.motivoausencia = "";

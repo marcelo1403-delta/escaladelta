@@ -1234,16 +1234,30 @@ var colarClipboardEscala=(anchor=null)=>{
   var table=destino.closest("table");
   if(!table||table.id!==clipboardEscala.tableId)return false;
   var destMatrix=matrizSelecaoEscala(selecoesOrdenadasEscala());
-  if(destMatrix&&selecoesCelulaEscala.size>1&&(destMatrix.rows!==clipboardEscala.rows||destMatrix.cols!==clipboardEscala.cols)){
+  var dimensoesIguais=Boolean(destMatrix&&destMatrix.rows===clipboardEscala.rows&&destMatrix.cols===clipboardEscala.cols);
+  var copiarUnitario=Boolean(destMatrix&&!clipboardEscala.recortar&&clipboardEscala.rows===1&&clipboardEscala.cols===1);
+  var repetirColuna=Boolean(destMatrix&&!clipboardEscala.recortar&&clipboardEscala.cols===1&&destMatrix.rows===clipboardEscala.rows);
+  var destinoMultiplo=Boolean(destMatrix&&selecoesCelulaEscala.size>1);
+  if(destinoMultiplo&&!dimensoesIguais&&!copiarUnitario&&!repetirColuna){
     showMultiActionIndicator("Destino incompatível");setTimeout(()=>hideMultiActionIndicator(),1200);return false;
   }
   var baseRow=destMatrix&&selecoesCelulaEscala.size>1?Math.min(...selecoesOrdenadasEscala().map((td)=>td.parentElement.sectionRowIndex)):destino.parentElement.sectionRowIndex;
   var baseCol=destMatrix&&selecoesCelulaEscala.size>1?Math.min(...selecoesOrdenadasEscala().map(colunaGridEscala)):colunaGridEscala(destino);
   var destinos=[];
-  for(var item of clipboardEscala.entries){
-    var td=obterCelulaEscalaPorPosicao(table,baseRow+item.row,baseCol+item.col);
-    if(!td)return false;
-    destinos.push({td,item});
+  if(destinoMultiplo&&!dimensoesIguais){
+    for(var destinoItem of destMatrix.entries){
+      var item=copiarUnitario
+        ? clipboardEscala.entries[0]
+        : clipboardEscala.entries.find((origem)=>origem.row===destinoItem.row);
+      if(!item)return false;
+      destinos.push({td:destinoItem.td,item});
+    }
+  }else{
+    for(var item of clipboardEscala.entries){
+      var td=obterCelulaEscalaPorPosicao(table,baseRow+item.row,baseCol+item.col);
+      if(!td)return false;
+      destinos.push({td,item});
+    }
   }
   var fontesRemovidas=clipboardEscala.recortar?clipboardEscala.entries.map((item)=>item.td):[];
   if(!validarPlanoEdicaoEscala(table,destinos,fontesRemovidas)){

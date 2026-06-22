@@ -229,17 +229,20 @@
 <button class="s03-btn turno day active">DIURNO</button><button class="s03-btn turno night">NOTURNO</button><button class="s03-btn turno all">TODOS</button>
 </div>
 <div class="s03-tool-group s03-tool-edicao">
-<!-- LEGADO COMENTADO: botões antigos de alocação/lista/coluna substituídos por dropdown padrão + modo EDITAR.
-<button class="s03-btn s03-action-btn s03-alocar" data-s03-tool="alocar" title="Alocar"><span class="s03-action-icon">☺+</span><span>ALOCAR</span></button><button class="s03-btn s03-action-btn s03-lista" data-s03-tool="lista" title="Lista"><span class="s03-action-icon">▾</span><span>LISTA</span></button><button class="s03-btn s03-action-btn" data-s03-tool="mover" title="Mover"><span class="s03-action-icon">↔</span><span>MOVER</span></button><button class="s03-btn s03-action-btn" data-s03-tool="copiar" title="Copiar"><span class="s03-action-icon">⧉</span><span>COPIAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="limpar" title="Limpar"><span class="s03-action-icon">⌫</span><span>LIMPAR</span></button>
---><button class="s03-btn s03-action-btn" data-s03-tool="recortar" title="Recortar seleção"><span class="s03-action-icon">✂</span><span>RECORTAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="copiar" title="Copiar seleção"><span class="s03-action-icon">⧉</span><span>COPIAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="colar" title="Colar"><span class="s03-action-icon">⤓</span><span>COLAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="limpar" title="Limpar seleção"><span class="s03-action-icon">⌫</span><span>LIMPAR</span></button><button class="s03-btn s03-action-btn" data-s03-tool="trocar" title="Trocar dois vetores (Ctrl+Shift+X)"><span class="s03-action-icon">⇄</span><span>TROCAR</span></button>
+<button class="s03-btn s03-action-btn" data-s03-tool="recortar" title="Recortar seleção (Ctrl+X)" aria-label="Recortar seleção"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="3"/><circle cx="6" cy="17" r="3"/><path d="m8.6 8.6 11.4 11.4M8.6 15.4 20 4"/></svg></button>
+<button class="s03-btn s03-action-btn" data-s03-tool="copiar" title="Copiar seleção (Ctrl+C)" aria-label="Copiar seleção"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+<button class="s03-btn s03-action-btn" data-s03-tool="colar" title="Colar (Ctrl+V)" aria-label="Colar"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v5M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6M15 19l3 3 4-4M18 22v-8"/></svg></button>
+<button class="s03-btn s03-action-btn" data-s03-tool="limpar" title="Limpar seleção" aria-label="Limpar seleção"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4L14.6 1.4a2 2 0 0 1 2.8 0l5.2 5.2a2 2 0 0 1 0 2.8L11 21"/><path d="M5 11 14 20M22 21H7"/></svg></button>
+<button class="s03-btn s03-action-btn" data-s03-tool="trocar" title="Trocar dois vetores (Ctrl+Shift+X)" aria-label="Trocar dois vetores"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3-4 4 4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg></button>
 </div>
 <div class="s03-tool-group s03-tool-saida">
-<button class="s03-btn s03-output-btn print-escala-btn" id="btnPreviewPrint" title="Imprimir"><span class="s03-action-icon">▣</span><span>IMPRIMIR</span></button><button class="s03-btn s03-output-btn" id="btnConfigEscalas" title="Configurações"><span class="s03-action-icon">⚙</span><span>CONFIG.</span></button>
+<button class="s03-btn s03-output-btn print-escala-btn" id="btnPreviewPrint" title="Imprimir" aria-label="Imprimir"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14" rx="1"/></svg></button>
+<button class="s03-btn s03-output-btn" id="btnConfigEscalas" title="Configurações" aria-label="Configurações"><svg class="s03-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
 </div>
 </div>
 <div class="s03-content">
 <div class="s03-card s03-card-t2">
-<div class="s03-banner s03-banner-t2"><span>POSTOS EXTERNOS | DIURNO</span><button class="s03-banner-x">×</button></div>
+<div class="s03-banner s03-banner-t2"><span>POSTOS EXTERNOS | DIURNO</span><button class="s03-banner-x" type="button" title="Limpar esta tabela" aria-label="Limpar tabela Postos Externos Diurno"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></svg></button></div>
 <table class="s03-table t2-table" id="tbl-T2">
 <colgroup><col class="t2-col-posto"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/><col class="t2-col-slot"/></colgroup>
 <thead><tr><th>POSTO</th><th>08:00-10:00</th><th>10:00-12:00</th><th>12:00-14:00</th><th>14:00-16:00</th><th>16:00-18:00</th><th>18:00-20:00</th></tr></thead>
@@ -256,7 +259,7 @@
 </table>
 </div>
 <div class="s03-card s03-card-t3 t3-card">
-<div class="s03-banner s03-banner-t3"><span>VIVÊNCIAS | DIURNO</span><button class="s03-banner-x">×</button></div>
+<div class="s03-banner s03-banner-t3"><span>VIVÊNCIAS | DIURNO</span><button class="s03-banner-x" type="button" title="Limpar esta tabela" aria-label="Limpar tabela Vivências Diurno"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></svg></button></div>
 <table class="s03-table t3-table" id="tbl-T3">
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <thead><tr><th>VIV. ALFA</th><th>VIV. BRAVO</th><th>VIV. CHARLIE</th><th>VIV. DELTA</th><th>IN/TR/SAU</th></tr><tr><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th><th>08:00-18:00</th></tr></thead>
@@ -268,7 +271,7 @@
 </table>
 </div>
 <div class="s03-card s03-card-noturno">
-<div class="s03-banner s03-banner-t4 turno-noturno"><span>POSTOS EXTERNOS | NOTURNO</span><button class="s03-banner-x">×</button></div>
+<div class="s03-banner s03-banner-t4 turno-noturno"><span>POSTOS EXTERNOS | NOTURNO</span><button class="s03-banner-x" type="button" title="Limpar esta tabela" aria-label="Limpar tabela Postos Externos Noturno"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></svg></button></div>
 <table class="s03-table t4-table turno-noturno" id="tbl-T4">
 <colgroup>
 <col class="t4-col-posto"/>
@@ -313,7 +316,7 @@
 </table>
 </div>
 <div class="s03-card s03-card-t5">
-<div class="s03-banner s03-banner-t5 turno-noturno"><span>VIVÊNCIAS | NOTURNO</span><button class="s03-banner-x">×</button></div>
+<div class="s03-banner s03-banner-t5 turno-noturno"><span>VIVÊNCIAS | NOTURNO</span><button class="s03-banner-x" type="button" title="Limpar esta tabela" aria-label="Limpar tabela Vivências Noturno"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"/></svg></button></div>
 <table class="s03-table t5-table turno-noturno" id="tbl-T5">
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <thead><tr><th>VIV. ALFA</th><th>VIV. BRAVO</th><th>VIV. CHARLIE</th><th>VIV. DELTA</th><th>IN/TR/SAU</th></tr><tr><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th><th>07:00-08:00</th></tr></thead>

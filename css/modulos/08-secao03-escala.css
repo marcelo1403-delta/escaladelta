@@ -127,21 +127,29 @@ body.turno-todos .s03-card-noturno{
 
 .s03-action-btn,
 .s03-output-btn{
-  gap:5px;
-  padding:0 8px;
-  font-size:9px;
-  font-weight:900;
+  width:36px;
+  min-width:36px;
+  padding:0;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease,box-shadow .15s ease;
 }
 
 .s03-action-btn{
-  width:78px;
-  min-width:78px;
+  width:36px;
+  min-width:36px;
 }
 
 .s03-tool-edicao .s03-action-btn{
   background:rgba(246,239,231,.55);
   color:#7a7469;
   border-color:rgba(184,160,134,.45);
+}
+
+.s03-tool-edicao .s03-action-btn:hover,
+.s03-tool-edicao .s03-action-btn:focus-visible{
+  background:#fff;
+  color:#2f4f7f;
+  border-color:#93a8c3;
+  box-shadow:0 2px 6px rgba(47,79,127,.16);
 }
 
 .s03-tool-edicao .s03-action-btn.active{
@@ -159,21 +167,35 @@ body.turno-todos .s03-card-noturno{
 }
 
 .s03-output-btn{
-  width:86px;
-  min-width:86px;
+  width:36px;
+  min-width:36px;
   background:#2f4f7f;
   color:#fff;
   border-color:#41699f;
 }
 
+.s03-output-btn:hover,
+.s03-output-btn:focus-visible{
+  background:#1f3d68;
+  border-color:#1f3d68;
+  box-shadow:0 2px 6px rgba(31,61,104,.25);
+}
+
 .s03-action-icon{
-  font-size:12px;
-  font-weight:900;
-  line-height:1;
+  width:17px;
+  height:17px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
 }
 
 .s03-output-btn .s03-action-icon{
-  font-size:15px;
+  width:18px;
+  height:18px;
 }
 
 .s03-content{
@@ -224,10 +246,30 @@ body.turno-todos .s03-card-noturno{
   border-radius:3px;
   background:rgba(255,255,255,.55);
   color:inherit;
-  font-size:14px;
-  font-weight:900;
-  line-height:18px;
   padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background-color .15s ease,color .15s ease,border-color .15s ease;
+}
+
+.s03-banner-x svg{
+  width:13px;
+  height:13px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
+}
+
+.s03-banner-x:hover,
+.s03-banner-x:focus-visible{
+  background:#fff1f2;
+  color:#b91c1c;
+  border-color:#ef4444;
 }
 
 /* Tabelas T2/T3: gaps claros, zebrado por coluna, sem linha escura nos espaços */
@@ -320,6 +362,12 @@ body.turno-todos .s03-card-noturno{
 .t2-table thead th:not(:first-child),
 .t3-table thead th{
   font-size:10px;
+}
+
+/* T2: gap vertical padrão entre o período geral e os intervalos. */
+.t2-table thead tr.t2-head-slots th{
+  border-top:3px solid #fff;
+  box-shadow:inset 0 1px 0 var(--s03-cell-border);
 }
 
 .t2-table .posto-cell{

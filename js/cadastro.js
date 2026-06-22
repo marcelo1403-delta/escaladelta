@@ -1528,7 +1528,7 @@
       msg("nome ja existente", "erro");
       return;
     }
-    const grupo = { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [] };
+    const grupo = { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [], estados: {} };
     gruposExtraRecorrente.push(grupo);
     salvarGruposExtra();
     popularSelectGrupos($("svRecGrupo"), grupo.id);
@@ -1554,6 +1554,7 @@
     carregarGruposExtra();
     gruposExtraRecorrente.forEach((grupo) => {
       grupo.membros = grupo.membros.filter((id) => id !== txt(servidorId));
+      if (grupo.estados) delete grupo.estados[txt(servidorId)];
     });
     salvarGruposExtra();
   }
@@ -1561,7 +1562,9 @@
   function associarServidorAoGrupoRecorrente(servidorId, grupoId, motivo, jornada, horario) {
     carregarGruposExtra();
     gruposExtraRecorrente.forEach((grupo) => {
-      if (grupo.id !== grupoId) grupo.membros = grupo.membros.filter((id) => id !== servidorId);
+      if (grupo.id === grupoId) return;
+      grupo.membros = grupo.membros.filter((id) => id !== servidorId);
+      if (grupo.estados) delete grupo.estados[servidorId];
     });
     const grupo = grupoExtraPorId(grupoId);
     if (!grupo) return null;
@@ -1569,8 +1572,26 @@
     grupo.jornada = norm(jornada);
     grupo.horario = txt(horario).toUpperCase();
     if (!grupo.membros.includes(servidorId)) grupo.membros.push(servidorId);
+    grupo.estados = grupo.estados || {};
+    grupo.estados[servidorId] = Boolean(motivo && jornada);
     salvarGruposExtra();
     return grupo;
+  }
+
+  function estadoAtualServidorRecorrente(servidor) {
+    return Boolean(servidor?.motivoapoio && servidor?.jornada);
+  }
+
+  function estadoMembroRecorrente(grupo, servidorId) {
+    if (!grupo || !servidorId) return false;
+    if (Object.prototype.hasOwnProperty.call(grupo.estados || {}, servidorId)) return grupo.estados[servidorId] !== false;
+    return estadoAtualServidorRecorrente(servidores.find((s) => s.id === servidorId));
+  }
+
+  function definirEstadoMembroRecorrente(grupo, servidorId, presente) {
+    if (!grupo || !servidorId) return;
+    grupo.estados = grupo.estados || {};
+    grupo.estados[servidorId] = Boolean(presente);
   }
 
   function aplicarGrupoRecorrenteEmServidores(grupo) {
@@ -1578,9 +1599,15 @@
     grupo.membros.forEach((id) => {
       const servidor = servidores.find((s) => s.id === id);
       if (!servidor) return;
-      servidor.motivoapoio = grupo.motivo;
-      servidor.jornada = grupo.jornada;
-      servidor.horario = grupo.horario || "";
+      if (estadoMembroRecorrente(grupo, id)) {
+        servidor.motivoapoio = grupo.motivo;
+        servidor.jornada = grupo.jornada;
+        servidor.horario = grupo.horario || "";
+        return;
+      }
+      servidor.motivoapoio = "";
+      servidor.jornada = "";
+      servidor.horario = "";
     });
   }
 
@@ -1613,7 +1640,7 @@
       return;
     }
 
-    const presente = Boolean(servidor.motivoapoio && servidor.jornada);
+    const presente = estadoMembroRecorrente(grupo, servidor.id);
     setCamposPresencaServidor(
       presente ? grupo.motivo || servidor.motivoapoio : "",
       presente ? grupo.jornada || servidor.jornada : "",
@@ -1663,6 +1690,7 @@
     const servidor = servidores.find((s) => s.id === servidorId);
     const grupo = grupoDoServidorRecorrente(servidorId);
     if (!servidor || !grupo) return;
+    definirEstadoMembroRecorrente(grupo, servidor.id, checked);
     if (checked) {
       servidor.motivoapoio = grupo.motivo;
       servidor.jornada = grupo.jornada;
@@ -1672,6 +1700,7 @@
       servidor.jornada = "";
       servidor.horario = "";
     }
+    salvarGruposExtra();
     renderTable();
     fillForm(servidor);
     sincronizarAbaEscala();
@@ -1715,6 +1744,7 @@
     try {
       const salvos = JSON.parse(localStorage.getItem(EXTRA_GRUPOS_KEY) || "[]");
       gruposExtraRecorrente = Array.isArray(salvos) ? salvos.map(normalizarGrupoExtra).filter(Boolean) : [];
+      sanearMembrosGruposRecorrentes();
     } catch (e) {
       gruposExtraRecorrente = [];
     }
@@ -1742,7 +1772,9 @@
     gruposExtraRecorrente = Array.isArray(lista)
       ? lista.map(normalizarGrupoExtra).filter(Boolean)
       : [];
+    sanearMembrosGruposRecorrentes();
     salvarGruposExtra();
+    aplicarTodosRecorrentesPadraoEmServidores();
     popularGruposExtra();
     popularSelectGrupos($("svRecGrupo"), getVal("svRecGrupo"));
     atualizarPopoverRecorrentesAberto();
@@ -1763,18 +1795,43 @@
     if (!item) return null;
     if (typeof item === "string") {
       const nome = nomeGrupo(item);
-      return nome ? { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [] } : null;
+      return nome ? { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [], estados: {} } : null;
     }
     const nome = nomeGrupo(item.nome || item.grupo);
     if (!nome) return null;
+    const membros = Array.isArray(item.membros)
+      ? [...new Set(item.membros.map(normalizarMembroGrupo).filter(Boolean))]
+      : [];
+    const estadosEntrada = item.estados && typeof item.estados === "object" ? item.estados : {};
+    const estados = {};
+    membros.forEach((id) => {
+      estados[id] = Object.prototype.hasOwnProperty.call(estadosEntrada, id)
+        ? estadosEntrada[id] !== false
+        : estadoAtualServidorRecorrente(servidores.find((s) => s.id === id));
+    });
     return {
       id: txt(item.id) || novoIdGrupoExtra(nome),
       nome,
       motivo: norm(item.motivo),
       jornada: norm(item.jornada),
       horario: txt(item.horario).toUpperCase(),
-      membros: Array.isArray(item.membros) ? item.membros.map(normalizarMembroGrupo).filter(Boolean) : []
+      membros,
+      estados
     };
+  }
+
+  function sanearMembrosGruposRecorrentes() {
+    const vistos = new Set();
+    gruposExtraRecorrente.forEach((grupo) => {
+      grupo.membros = grupo.membros.filter((id) => {
+        if (!servidores.some((s) => s.id === id) || vistos.has(id)) {
+          if (grupo.estados) delete grupo.estados[id];
+          return false;
+        }
+        vistos.add(id);
+        return true;
+      });
+    });
   }
 
   function novoIdGrupoExtra(nome) {
@@ -1826,7 +1883,7 @@
       msgExtra("GRUPO JA EXISTE");
       return;
     }
-    const grupo = { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [] };
+    const grupo = { id: novoIdGrupoExtra(nome), nome, motivo: "", jornada: "", horario: "", membros: [], estados: {} };
     gruposExtraRecorrente.push(grupo);
     salvarGruposExtra();
     popularGruposExtra(grupo.id);
@@ -1949,16 +2006,42 @@
     if (recorrente) {
       const grupo = grupoExtraPorId(grupoId);
       if (!grupo) return msgExtra("GRUPO NAO ENCONTRADO");
+      const removidos = grupo.membros.filter((id) => !ids.includes(id));
+      removidos.forEach((id) => {
+        const servidor = servidores.find((s) => s.id === id);
+        if (servidor) {
+          servidor.motivoapoio = "";
+          servidor.jornada = "";
+          servidor.horario = "";
+        }
+      });
+      gruposExtraRecorrente.forEach((outro) => {
+        if (outro.id === grupo.id) return;
+        outro.membros = outro.membros.filter((id) => !ids.includes(id));
+        ids.forEach((id) => { if (outro.estados) delete outro.estados[id]; });
+      });
       grupo.motivo = motivo;
       grupo.jornada = jornada;
       grupo.horario = horario;
       grupo.membros = ids.slice();
+      grupo.estados = grupo.estados || {};
+      Object.keys(grupo.estados).forEach((id) => { if (!ids.includes(id)) delete grupo.estados[id]; });
+      ids.forEach((id) => {
+        if (!Object.prototype.hasOwnProperty.call(grupo.estados, id)) grupo.estados[id] = true;
+      });
       salvarGruposExtra();
     }
 
     ids.forEach((id) => {
       const servidor = servidores.find((s) => s.id === id);
       if (!servidor) return;
+      const grupo = recorrente ? grupoExtraPorId(grupoId) : null;
+      if (grupo && !estadoMembroRecorrente(grupo, id)) {
+        servidor.motivoapoio = "";
+        servidor.jornada = "";
+        servidor.horario = "";
+        return;
+      }
       servidor.motivoapoio = motivo;
       servidor.jornada = jornada;
       servidor.horario = horario;
@@ -2118,7 +2201,7 @@
     ).sort((a, b) => nomeCurtoServidor(a.servidor).localeCompare(nomeCurtoServidor(b.servidor), "pt-BR"));
     tbody.innerHTML = membros.length ? membros.map(({ grupo, servidor }) => `
       <tr data-servidor-id="${esc(servidor.id)}" data-grupo-id="${esc(grupo.id)}">
-        <td><input class="rec-pres-check" type="checkbox" checked></td>
+        <td><input class="rec-pres-check" type="checkbox"${estadoMembroRecorrente(grupo, servidor.id) ? " checked" : ""}></td>
         <td class="hidden-logica">${esc(servidor.id)}</td>
         <td title="${esc(nomeCompletoServidor(servidor))}">${esc(nomeCurtoServidor(servidor))}</td>
         <td title="${esc(grupo.nome)}">${esc(grupo.nome)}</td>
@@ -2137,7 +2220,7 @@
     if (!servidor || !grupo) return;
     row.classList.add("is-editing");
     row.innerHTML = `
-      <td><input class="rec-pres-check" type="checkbox" checked></td>
+      <td><input class="rec-pres-check" type="checkbox"${estadoMembroRecorrente(grupo, servidor.id) ? " checked" : ""}></td>
       <td class="hidden-logica">${esc(servidor.id)}</td>
       <td title="${esc(nomeCompletoServidor(servidor))}">${esc(nomeCurtoServidor(servidor))}</td>
       <td><select class="rec-edit-select rec-mem-grupo-select">${gruposExtraRecorrente.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((item) => `<option value="${esc(item.id)}"${item.id === grupo.id ? " selected" : ""}>${esc(item.nome)}</option>`).join("")}</select></td>
@@ -2157,7 +2240,7 @@
     row.classList.remove("is-editing");
     row.classList.add("is-pending");
     row.innerHTML = `
-      <td><input class="rec-pres-check" type="checkbox" checked></td>
+      <td><input class="rec-pres-check" type="checkbox"${estadoMembroRecorrente(destino, servidorId) ? " checked" : ""}></td>
       <td class="hidden-logica">${esc(servidorId)}</td>
       <td title="${esc(nomeCompletoServidor(servidor))}">${esc(nomeCurtoServidor(servidor))}</td>
       <td title="${esc(destino.nome)}">${esc(destino.nome)}</td>
@@ -2244,6 +2327,7 @@
     const grupo = grupoExtraPorId(grupoId);
     if (!grupo) return;
     grupo.membros = grupo.membros.filter((id) => id !== servidorId);
+    if (grupo.estados) delete grupo.estados[servidorId];
     if (limparServidor) {
       const servidor = servidores.find((s) => s.id === servidorId);
       if (servidor) {
@@ -2326,8 +2410,14 @@
       const origem = grupoExtraPorId(row.dataset.grupoId);
       const destino = grupoExtraPorId(row.dataset.pendingMoveTo);
       if (!servidorId || !destino || gruposExcluidos.has(destino.id)) return;
-      if (origem && origem.id !== destino.id) origem.membros = origem.membros.filter((id) => id !== servidorId);
+      const presente = Boolean(row.querySelector(".rec-pres-check")?.checked);
+      gruposExtraRecorrente.forEach((grupo) => {
+        if (grupo.id === destino.id) return;
+        grupo.membros = grupo.membros.filter((id) => id !== servidorId);
+        if (grupo.estados) delete grupo.estados[servidorId];
+      });
       if (!destino.membros.includes(servidorId)) destino.membros.push(servidorId);
+      definirEstadoMembroRecorrente(destino, servidorId, presente);
       row.dataset.grupoId = destino.id;
     });
 
@@ -2335,6 +2425,7 @@
       const grupo = grupoExtraPorId(row.dataset.grupoId);
       const servidorId = txt(row.dataset.servidorId);
       if (grupo) grupo.membros = grupo.membros.filter((id) => id !== servidorId);
+      if (grupo?.estados) delete grupo.estados[servidorId];
       const servidor = servidores.find((s) => s.id === servidorId);
       if (servidor) {
         servidor.motivoapoio = "";
@@ -2350,6 +2441,7 @@
 
   function aplicarRecorrentesExibidosEmServidores() {
     const rows = Array.from(document.querySelectorAll("#recMembrosBody tr"))
+      .filter((row) => row.dataset.pendingDelete !== "1")
       .map((row) => ({
         checked: Boolean(row.querySelector(".rec-pres-check")?.checked),
         grupo: grupoExtraPorId(row.dataset.grupoId),
@@ -2358,6 +2450,7 @@
       .filter((item) => item.grupo && item.servidor);
     if (!rows.length) return false;
     rows.forEach(({ checked, grupo, servidor }) => {
+      definirEstadoMembroRecorrente(grupo, servidor.id, checked);
       if (checked && grupo.motivo && grupo.jornada) {
         servidor.motivoapoio = grupo.motivo;
         servidor.jornada = grupo.jornada;
@@ -2368,6 +2461,7 @@
       servidor.jornada = "";
       servidor.horario = "";
     });
+    salvarGruposExtra();
     renderTable();
     renderEfetivo();
     return true;
@@ -2632,7 +2726,6 @@
     window.importCadastroServidores = (lista = []) => {
       servidores = Array.isArray(lista) ? lista.map(normalizarServidor) : [];
       prepararPermutasIniciais();
-      aplicarTodosRecorrentesPadraoEmServidores();
       renderTable();
       clearForm();
       renderEfetivo();

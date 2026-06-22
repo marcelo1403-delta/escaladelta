@@ -509,13 +509,7 @@ body:not(.s03-edit-mode) .s03-table tbody td:not(.posto-cell):not(.s03-posto-ina
 .s03-cell-cut{ opacity:.55; outline:2px dashed #b45309; outline-offset:-2px; }
 .s03-cell-empty-option{ font-weight:700; color:#991b1b; background:#fff1f2; }
 .s03-cell-force-heading{ font-size:10px; font-weight:800; color:#475569; background:#f1f5f9; padding:4px 6px; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; position:sticky; top:0; }
-.s03-repeat-popover{ position:fixed; z-index:99999; width:220px; background:#fff; border:1px solid #94a3b8; box-shadow:0 8px 24px rgba(15,23,42,.25); border-radius:8px; padding:8px; font:12px Arial,sans-serif; }
-.s03-repeat-title{ font-weight:800; color:#1e3a8a; margin-bottom:6px; }
-.s03-repeat-origin{ font-size:11px; color:#475569; margin-bottom:6px; }
-.s03-repeat-list{ max-height:150px; overflow:auto; display:grid; gap:4px; }
-.s03-repeat-list label{ display:flex; gap:6px; align-items:center; }
-.s03-repeat-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-.s03-repeat-actions button{ height:24px; border:1px solid #64748b; border-radius:6px; background:#f8fafc; font-weight:700; font-size:11px; }
+.s03-cell-swap-source{ outline:2px dashed #7c3aed !important; outline-offset:-2px; background:#ede9fe !important; }
 
 
 /* NOVO: somente o botão EDITAR fica visível quando o modo edição está desligado. */

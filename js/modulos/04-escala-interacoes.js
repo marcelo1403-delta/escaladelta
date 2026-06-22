@@ -10,6 +10,7 @@ var modoDropdownEscala=false;
 // NOVO: modo padrão é alocação por dropdown; EDITAR só é ligado por toggle/atalho e inibe a dropdown.
 var modoEditarEscala=false;
 var clipboardEscala=null;
+var trocaEscalaPendente=null;
 var selecaoArrastoEscala=null;
 var modoColunaEscala=null;
 var colunaOrigemEscala=null;
@@ -20,6 +21,15 @@ var selecoesCelulaEscala=new Set();
 var limparSelecoesCelulaEscala=()=>{
   selecoesCelulaEscala.forEach((cell)=>cell.classList.remove("s03-cell-multi-selected"));
   selecoesCelulaEscala.clear();
+};
+var cancelarSelecoesEdicaoEscala=()=>{
+  limparSelecoesCelulaEscala();
+  limparAcaoCelulaEscala();
+  selecaoArrastoEscala=null;
+  document.querySelectorAll(".s03-cell-cut").forEach((td)=>td.classList.remove("s03-cell-cut"));
+  document.querySelectorAll(".s03-cell-swap-source").forEach((td)=>td.classList.remove("s03-cell-swap-source"));
+  if(clipboardEscala?.recortar)clipboardEscala=null;
+  trocaEscalaPendente=null;
 };
 var INDICATOR_ID="s03-multi-action-indicator";
 var criarMultiActionIndicator=()=>{
@@ -180,10 +190,9 @@ var aplicarAcaoCelulasEscala=(td)=>{
   if(destinos.some((item)=>!item.destinoTd))return false;
   var destinoTds=new Set(destinos.map((item)=>item.destinoTd));
   if(destinoTds.size!==acaoCelulaEscala.origens.length)return false;
-  for(var item of destinos){
-    if(item.destinoTd===item.origem.td&&acaoCelulaEscala.mover)return false;
-    if(!podeReceberMultiPasteEscala(item.destinoTd,item.origem.forca,{sinalizar:false}))return false;
-  }
+  var operacoes=destinos.map((item)=>({td:item.destinoTd,item:{nome:item.origem.nome,forca:item.origem.forca}}));
+  var fontesRemovidas=acaoCelulaEscala.mover?acaoCelulaEscala.origens.map((orig)=>orig.td):[];
+  if(!validarPlanoEdicaoEscala(table,operacoes,fontesRemovidas))return false;
   if(acaoCelulaEscala.mover){
     acaoCelulaEscala.origens.forEach((orig)=>limparCelulaEscala(orig.td));
   }
@@ -291,27 +300,20 @@ var tecladoAcaoCelulaEscala=(event)=>{
 var podeReceberDropEscala=(td,nome,forca,origem=null,mover=false,{sinalizar=true}={})=>{
   var table=td?.closest?.("table");
   if(!table||!nome||!forca||td.classList.contains("posto-cell")||td.classList.contains("s03-posto-inativo"))return false;
+  if(origem&&origem.closest?.("table")!==table)return false;
   var local=localAlocacao(td);
   if(!forcaPermitidaNoLocal(table.id,local,forca)){
     if(sinalizar)avisarForcaRestrita(td,forcaDoLocal(table.id,local));
     return false;
   }
-  var destinoOcupado=celulaOcupadaEscala(td);
-  var forcaDestino=forcaCelulaEscala(td);
-  var mesmaForcaDestino=!destinoOcupado||normResp(forcaDestino)===normResp(forca);
   // Responsáveis/chefes automáticos de T2/T3 continuam protegidos: eles vêm da Seção 2.
   if(celulaChefePosto(td)){
     if(sinalizar)bloquearDrop(td);
     return false;
   }
-  // Célula ocupada: permite sobrescrição desde que a força de destino seja compatível.
-  // Bloqueio preservado apenas para célula de responsável de posto (celulaChefePosto já tratado acima)
-  // e para força diferente (forcaPermitidaNoLocal já tratado acima).
+  // Celula ocupada pode ser sobrescrita. A restricao pertence ao local de destino,
+  // nao a forca do nome que estava anteriormente na celula.
   var ignorarDuplicado=origem&&mover?origem:null;
-  if(destinoOcupado&&!mesmaForcaDestino){
-    if(sinalizar)bloquearDrop(td);
-    return false;
-  }
   if(nomeDuplicadoNaColuna(table,td,nome,ignorarDuplicado)){
     if(sinalizar)bloquearDrop(td);
     return false;
@@ -325,6 +327,32 @@ var podeReceberMultiPasteEscala=(td,forca,{sinalizar=true}={})=>{
   if(!forcaPermitidaNoLocal(table.id,local,forca)){
     if(sinalizar)avisarForcaRestrita(td,forcaDoLocal(table.id,local));
     return false;
+  }
+  return true;
+};
+var podeEditarDestinoMultiEscala=(td,item,{sinalizar=true}={})=>{
+  if(!celulaSelecionavelEscala(td))return false;
+  if(!item?.nome)return true;
+  return podeReceberMultiPasteEscala(td,item.forca,{sinalizar});
+};
+var validarPlanoEdicaoEscala=(table,operacoes,fontesRemovidas=[])=>{
+  if(!table||!Array.isArray(operacoes)||!operacoes.length)return false;
+  if(operacoes.some(({td,item})=>td?.closest?.("table")!==table||!podeEditarDestinoMultiEscala(td,item,{sinalizar:false})))return false;
+
+  const estado=new Map();
+  table.querySelectorAll("tbody td:not(.posto-cell)").forEach((td)=>estado.set(td,nomeCelulaEscala(td)));
+  fontesRemovidas.forEach((td)=>{if(td?.closest?.("table")===table)estado.set(td,"");});
+  operacoes.forEach(({td,item})=>estado.set(td,item?.nome||""));
+
+  const vistosPorColuna=new Map();
+  for(const [td,nomeRaw] of estado){
+    const nome=normResp(nomeRaw);
+    if(!nome)continue;
+    const coluna=colunaAlocacao(td);
+    if(!vistosPorColuna.has(coluna))vistosPorColuna.set(coluna,new Set());
+    const vistos=vistosPorColuna.get(coluna);
+    if(vistos.has(nome))return false;
+    vistos.add(nome);
   }
   return true;
 };
@@ -349,11 +377,9 @@ var validarDestinoAcaoCelulasEscala=(td)=>{
   if(destinos.some((item)=>!item.destinoTd))return false;
   var destinoTds=new Set(destinos.map((item)=>item.destinoTd));
   if(destinoTds.size!==acaoCelulaEscala.origens.length) return false;
-  for(var item of destinos){
-    if(item.destinoTd===item.origem.td&&acaoCelulaEscala.mover) return false;
-    if(!podeReceberMultiPasteEscala(item.destinoTd,item.origem.forca)) return false;
-  }
-  return true;
+  var operacoes=destinos.map((item)=>({td:item.destinoTd,item:{nome:item.origem.nome,forca:item.origem.forca}}));
+  var fontesRemovidas=acaoCelulaEscala.mover?acaoCelulaEscala.origens.map((orig)=>orig.td):[];
+  return validarPlanoEdicaoEscala(table,operacoes,fontesRemovidas);
 };
 var setDropOk=(event)=>{
   var td=tdEventoEscala(event);
@@ -1135,8 +1161,7 @@ var setModoEditarEscala=(ativo)=>{
     if(modoDropdownEscala)setModoDropdownEscala(false);
     removerDropdownsEscala();
   }else{
-    limparSelecoesCelulaEscala();
-    limparAcaoCelulaEscala();
+    cancelarSelecoesEdicaoEscala();
   }
 };
 var iniciarSelecaoEditarEscala=(event)=>{
@@ -1185,6 +1210,7 @@ var copiarSelecaoEscala=(recortar=false)=>{
   var tds=selecoesOrdenadasEscala();
   var matriz=matrizSelecaoEscala(tds);
   if(!matriz){showMultiActionIndicator("Seleção inválida");setTimeout(()=>hideMultiActionIndicator(),1200);return false;}
+  document.querySelectorAll(".s03-cell-cut").forEach((td)=>td.classList.remove("s03-cell-cut"));
   clipboardEscala={...matriz,recortar};
   showMultiActionIndicator((recortar?"Recortado":"Copiado")+` — ${matriz.entries.length} células`);
   if(recortar)matriz.entries.forEach((item)=>item.td.classList.add("s03-cell-cut"));
@@ -1216,9 +1242,12 @@ var colarClipboardEscala=(anchor=null)=>{
   var destinos=[];
   for(var item of clipboardEscala.entries){
     var td=obterCelulaEscalaPorPosicao(table,baseRow+item.row,baseCol+item.col);
-    if(!td||!podeReceberMultiPasteEscala(td,item.forca,{sinalizar:false}))return false;
-    if(item.nome&&nomeDuplicadoNaColuna(table,td,item.nome,null))return false;
+    if(!td)return false;
     destinos.push({td,item});
+  }
+  var fontesRemovidas=clipboardEscala.recortar?clipboardEscala.entries.map((item)=>item.td):[];
+  if(!validarPlanoEdicaoEscala(table,destinos,fontesRemovidas)){
+    showMultiActionIndicator("Destino inválido");setTimeout(()=>hideMultiActionIndicator(),1200);return false;
   }
   if(clipboardEscala.recortar)clipboardEscala.entries.forEach((item)=>limparCelulaEscala(item.td));
   destinos.forEach(({td,item})=>preencherCelulaColuna(td,{nome:item.nome,forca:item.forca}));
@@ -1230,40 +1259,62 @@ var colarClipboardEscala=(anchor=null)=>{
   salvarLocalEmergencial();
   return true;
 };
-var abrirPopoverRepetirEscala=()=>{
-  var matriz=matrizSelecaoEscala(selecoesOrdenadasEscala());
-  if(!matriz||matriz.cols!==1){showMultiActionIndicator("Selecione uma coluna origem");setTimeout(()=>hideMultiActionIndicator(),1200);return false;}
-  var origem=selecoesOrdenadasEscala()[0];
-  var table=origem.closest("table");
-  var origemCol=colunaGridEscala(origem);
-  var cols=colunasTabelaEscala(table).filter((col)=>col>origemCol);
-  if(!cols.length){showMultiActionIndicator("Não há colunas à direita");setTimeout(()=>hideMultiActionIndicator(),1200);return false;}
-  document.getElementById("popoverS03Repetir")?.remove();
-  var pop=document.createElement("div");
-  pop.id="popoverS03Repetir";
-  pop.className="s03-repeat-popover";
-  pop.innerHTML=`<div class="s03-repeat-title">REPETIR ALOCAÇÃO</div><div class="s03-repeat-origin">Origem: coluna ${origemCol}</div><div class="s03-repeat-list">${cols.map((col)=>`<label><input type="checkbox" value="${col}" checked> Coluna ${col}</label>`).join("")}</div><div class="s03-repeat-actions"><button type="button" data-act="ok">CONFIRMAR</button><button type="button" data-act="cancel">CANCELAR</button></div>`;
-  document.body.appendChild(pop);
-  var rect=origem.getBoundingClientRect();
-  pop.style.left=Math.max(6,Math.min(rect.left,window.innerWidth-230))+"px";
-  pop.style.top=Math.max(6,Math.min(rect.bottom+4,window.innerHeight-260))+"px";
-  pop.addEventListener("click",(event)=>{
-    var act=event.target?.dataset?.act;
-    if(act==="cancel"){pop.remove();return;}
-    if(act!=="ok")return;
-    var selecionadas=Array.from(pop.querySelectorAll("input:checked")).map((inp)=>Number(inp.value));
-    selecionadas.forEach((col)=>{
-      matriz.entries.forEach((item)=>{
-        var td=obterCelulaEscalaPorPosicao(table,origem.parentElement.sectionRowIndex+item.row,col);
-        if(td&&podeReceberMultiPasteEscala(td,item.forca,{sinalizar:false})&&(!item.nome||!nomeDuplicadoNaColuna(table,td,item.nome,null)))preencherCelulaColuna(td,{nome:item.nome,forca:item.forca});
-      });
-    });
-    atualizarDisponibilidadeColuna();
-    if(typeof window.renderEfetivo==="function")window.renderEfetivo();
-    salvarTabelasEscalaDados();
-    salvarLocalEmergencial();
-    pop.remove();
-  });
+var tipoVetorSelecaoEscala=(matriz)=>{
+  if(!matriz)return "";
+  if(matriz.rows===1&&matriz.cols===1)return "unitario";
+  if(matriz.rows===1)return "horizontal";
+  if(matriz.cols===1)return "vertical";
+  return "";
+};
+var trocarVetoresEscala=()=>{
+  var tds=selecoesOrdenadasEscala();
+  var matriz=matrizSelecaoEscala(tds);
+  var direcao=tipoVetorSelecaoEscala(matriz);
+  if(!matriz||!direcao){
+    showMultiActionIndicator("Selecione um vetor horizontal ou vertical");
+    setTimeout(()=>hideMultiActionIndicator(),1400);
+    return false;
+  }
+
+  if(!trocaEscalaPendente){
+    trocaEscalaPendente={matriz,direcao,tds:[...tds]};
+    tds.forEach((td)=>td.classList.add("s03-cell-swap-source"));
+    limparSelecoesCelulaEscala();
+    showMultiActionIndicator(`Troca: selecione outro vetor ${direcao} com ${matriz.entries.length} células`);
+    return true;
+  }
+
+  var origem=trocaEscalaPendente;
+  var mesmaTabela=origem.matriz.tableId===matriz.tableId;
+  var mesmoFormato=origem.direcao===direcao&&origem.matriz.rows===matriz.rows&&origem.matriz.cols===matriz.cols;
+  var sobreposto=tds.some((td)=>origem.tds.includes(td));
+  if(!mesmaTabela||!mesmoFormato||sobreposto){
+    showMultiActionIndicator(!mesmaTabela?"Troca somente na mesma tabela":sobreposto?"Vetores não podem se sobrepor":"Vetores incompatíveis");
+    setTimeout(()=>hideMultiActionIndicator(),1500);
+    return false;
+  }
+
+  var table=tds[0].closest("table");
+  var operacoes=[];
+  origem.matriz.entries.forEach((item,index)=>operacoes.push({td:tds[index],item}));
+  matriz.entries.forEach((item,index)=>operacoes.push({td:origem.tds[index],item}));
+  var fontes=[...origem.tds,...tds];
+  if(!validarPlanoEdicaoEscala(table,operacoes,fontes)){
+    showMultiActionIndicator("Troca inválida: verifique força, duplicidade ou célula protegida");
+    setTimeout(()=>hideMultiActionIndicator(),1700);
+    return false;
+  }
+
+  fontes.forEach(limparCelulaEscala);
+  operacoes.forEach(({td,item})=>preencherCelulaColuna(td,{nome:item.nome,forca:item.forca}));
+  document.querySelectorAll(".s03-cell-swap-source").forEach((td)=>td.classList.remove("s03-cell-swap-source"));
+  trocaEscalaPendente=null;
+  limparSelecoesCelulaEscala();
+  hideMultiActionIndicator();
+  atualizarDisponibilidadeColuna();
+  if(typeof window.renderEfetivo==="function")window.renderEfetivo();
+  salvarTabelasEscalaDados();
+  salvarLocalEmergencial();
   return true;
 };
 var setModoAlocar=(ativo)=>{

@@ -104,10 +104,9 @@ document.addEventListener("click",(event)=>{
 },true);
 
 document.addEventListener("click",(event)=>{
-  if(!acaoCelulaEscala)return;
   if(event.target.closest?.(".s03-table"))return;
-  if(event.target.closest?.("[data-s03-cell-action]"))return;
-  limparAcaoCelulaEscala();
+  if(event.target.closest?.(".s03-tool-edicao,#popoverS03LimparTabela,[data-s03-cell-action]"))return;
+  cancelarSelecoesEdicaoEscala();
 },true);
 document.addEventListener("dragend",()=>{if(tdAvisoForca)limparAvisoForcaRestrita(tdAvisoForca);});
 ["click","dblclick","pointerdown","keydown","input","change","drop","dragstart"].forEach((eventName)=>{
@@ -141,7 +140,7 @@ var acionarFerramentaEscala=(btn,event)=>{
   else if(tool==="copiar")copiarSelecaoEscala(false);
   else if(tool==="colar")colarClipboardEscala(document.activeElement?.closest?.(".s03-table tbody td"));
   else if(tool==="limpar")limparSelecaoEditavelEscala();
-  else if(tool==="repetir")abrirPopoverRepetirEscala();
+  else if(tool==="trocar")trocarVetoresEscala();
   else setModoColunaEscala(tool);
 };
 document.querySelectorAll(".s03-tool-edicao [data-s03-tool]").forEach((btn)=>btn.addEventListener("click",(event)=>acionarFerramentaEscala(btn,event)));
@@ -203,14 +202,13 @@ document.addEventListener("keydown",(event)=>{
   if(campoTextoAtivoEscala(event.target))return;
   var key=String(event.key||"").toLowerCase();
   if(event.ctrlKey||event.metaKey){
-    if(key==="x"||key==="c"||key==="v"||key==="r"){
+    if(key==="x"||key==="c"||key==="v"){
       event.preventDefault();
       event.stopPropagation();
       if(!modoEditarEscala)setModoEditarEscala(true);
       if(key==="x")copiarSelecaoEscala(true);
       else if(key==="c")copiarSelecaoEscala(false);
       else if(key==="v")colarClipboardEscala(document.activeElement?.closest?.(".s03-table tbody td"));
-      else if(key==="r")abrirPopoverRepetirEscala();
     }
     return;
   }
@@ -230,9 +228,7 @@ document.addEventListener("keydown",(event)=>{
   if(modoDropdownEscala)setModoDropdownEscala(false);
   if(modoColunaEscala)limparEstadoColunaEscala();
   if(tabelaLimparPendente)fecharPopoverLimparTabela(false);
-  // Limpa seleção múltipla e ação pendente ao pressionar Esc
-  limparSelecoesCelulaEscala();
-  limparAcaoCelulaEscala();
+  cancelarSelecoesEdicaoEscala();
   fecharMenuOutrosTop();
 });
 document.querySelectorAll(".lp-force-btn").forEach((btn)=>btn.addEventListener("click",()=>{

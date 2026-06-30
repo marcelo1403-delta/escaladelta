@@ -1023,7 +1023,7 @@
   const filtroEfetivoMsgs = {
     presente: "Todos os presentes no plantao",
     ausente: "Ausentes que NAO estao de permuta.",
-    permuta: "Ausentes que estao de permuta.",
+    permuta: "Ausentes por permuta e faltas no pgto. de permuta.",
     extra: "Presencas extras no plantao (exceto pgto. de permuta).",
     todos: "Todos os presentes e ausentes do plantao."
   };
@@ -1031,7 +1031,7 @@
   function filtrarEfetivoRows(rows, filtro = filtroEfetivoAtivo()) {
     if (filtro === "todos") return rows.filter((row) => row.sit === "pres" || row.sit === "aus");
     if (filtro === "ausente") return rows.filter((row) => row.sit === "aus" && row.tipo === "comum");
-    if (filtro === "permuta") return rows.filter((row) => row.sit === "aus" && row.tipo === "folgante");
+    if (filtro === "permuta") return rows.filter((row) => row.sit === "aus" && (row.tipo === "folgante" || row.tipo === "permutante"));
     if (filtro === "extra") return rows.filter((row) => row.sit === "pres" && row.tipo === "extra");
     return rows.filter((row) => row.sit === "pres");
   }

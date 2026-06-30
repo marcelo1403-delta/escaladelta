@@ -587,6 +587,12 @@
       if (sub.id_pgto_permuta && sub.id_pgto_permuta !== v.id_pgto_permuta) return fail("SUBSTITUTO JA VINCULADO A OUTRA PERMUTA.");
     }
 
+    const atual = servidores.find((s) => s.id === v.id);
+    const isPgtoReg = Boolean(atual && permutaOrigemDoPgto(atual));
+    if (isPgtoReg && norm(v.status_pgto || atual.status_pgto) === "AUSENTE" && !v.motivoausencia) {
+      return fail("CAMPO OBRIGATORIO: MOTIVO AUSENCIA");
+    }
+
     return v;
   }
 
@@ -675,9 +681,11 @@
   function concluirSave(v) {
     const isInsert = !v.id;
     let antigo = null;
+    let isPgtoReg = false;
 
     if (!isInsert) {
       antigo = servidores.find((s) => s.id === v.id);
+      isPgtoReg = Boolean(antigo && permutaOrigemDoPgto(antigo));
     }
 
     if (!isInsert && norm(v.status) === "INATIVO") {
@@ -695,6 +703,13 @@
       v.status_pgto = "";
     }
 
+    if (isPgtoReg && norm(v.status_pgto || antigo?.status_pgto || "PRESENTE") === "PRESENTE") {
+      v.motivoausencia = "";
+      v.substituto = "";
+      v.infoausencia = "";
+      v.status_pgto = "PRESENTE";
+    }
+
     if (isInsert) {
       v.id = nextId();
       v.status = "ATIVO";
@@ -710,7 +725,7 @@
       }
     }
 
-    aplicarPermuta(v, antigo);
+    if (!isPgtoReg) aplicarPermuta(v, antigo);
     if ($("svRecorrente")?.checked) {
       associarServidorAoGrupoRecorrente(v.id, txt($("svRecGrupo")?.value), v.motivoapoio, v.jornada, v.horario);
     }

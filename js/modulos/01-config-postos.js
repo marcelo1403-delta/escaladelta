@@ -11,7 +11,7 @@ var postoRowsDefault=[
 ["8","T2","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
 ["9","T3","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
 ["10","T4","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
-["11","VIV. ALFA","INATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
+["11","VIV. ALFA","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["12","VIV. BRAVO","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["13","VIV. CHARLIE","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["14","VIV. DELTA","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],

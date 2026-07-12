@@ -173,6 +173,7 @@ var sincronizarResponsaveisEscalas=()=>{
   }
 };
 var renderResponsaveisViews=()=>{
+  sincronizarResponsaveisComPostos?.();
   var plantao=plantaoRespAtual();
   atualizarBadgesResponsaveis();
   document.querySelectorAll(".force-block").forEach((block)=>{

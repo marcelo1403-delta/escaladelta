@@ -11,7 +11,10 @@ var STORAGE_RESP_KEY="escalaAgent:responsaveisPosto:v2";
 var _plantaoRespFallback="";
 var _dataRespFallback="";
 var respRows=[];
-postoRows.forEach((posto)=>{
+var chaveResp=(row)=>`${normResp(row.forca)}|${normResp(row.plantao)}|${normResp(row.posto)}`;
+var montarRespRowsPostos=()=>{
+  var rows=[];
+  postoRows.forEach((posto)=>{
   if(posto[2]!=="ATIVO"||posto[3]!=="SIM")return;
   var forcasResponsavel=(()=>{
     var forcas=[];
@@ -23,22 +26,33 @@ postoRows.forEach((posto)=>{
   })();
   forcasResponsavel.forEach((forca)=>{
     plantoesResp.forEach((plantao)=>{
-      respRows.push({id:String(respRows.length+1).padStart(3,"0"),forca,plantao,posto:posto[1],responsavel:"",status:"ATIVO"});
+      rows.push({id:String(rows.length+1).padStart(3,"0"),forca,plantao,posto:posto[1],responsavel:"",status:"ATIVO"});
     });
   });
-});
+  });
+  return rows;
+};
+var sincronizarResponsaveisComPostos=()=>{
+  var salvos=new Map(respRows.map((row)=>[chaveResp(row),row]));
+  respRows=montarRespRowsPostos().map((row)=>{
+    var salvo=salvos.get(chaveResp(row));
+    return salvo?{...row,responsavel:salvo.responsavel||"",status:salvo.status||row.status}:row;
+  });
+  return respRows;
+};
+sincronizarResponsaveisComPostos();
 var plantaoRespAtual=()=>{
   var plantaoNavbar=normResp(document.getElementById("topoPlantaoDia")?.textContent);
   return plantoesResp.includes(plantaoNavbar)?plantaoNavbar:_plantaoRespFallback;
 };
 var dataRespValida=()=>/^\d{4}-\d{2}-\d{2}$/.test(document.getElementById("topoDatePicker")?.value||_dataRespFallback||"");
 var nomeVazioResp=(value)=>!txtResp(value)||["-","—","⊘"].includes(txtResp(value));
-var chaveResp=(row)=>`${normResp(row.forca)}|${normResp(row.plantao)}|${normResp(row.posto)}`;
 var snapshotResponsaveis=()=>respRows.map((row)=>({...row}));
 var listaResponsaveisTemNomes=(lista)=>Array.isArray(lista)&&lista.some((row)=>txtResp(row?.responsavel));
 var payloadResponsaveis=(rows=snapshotResponsaveis())=>({versao:2,salvoEm:new Date().toISOString(),rows});
 var aplicarResponsaveisSalvos=(lista)=>{
   if(!Array.isArray(lista))return false;
+  sincronizarResponsaveisComPostos();
   var savedMap=new Map();
   lista.forEach((item)=>{
     var key=chaveResp(item);
@@ -175,6 +189,7 @@ var respSelect=(valor,row)=>{
 };
 var renderResponsaveisPostos=()=>{
   if(!respPostosBody)return;
+  sincronizarResponsaveisComPostos();
   var filtroForca=normResp(respFiltroForca?.value||"PPF");
   var filtroPlantao=normResp(respFiltroPlantao?.value||"TODOS");
   var busca=normResp(respBusca?.value||"");

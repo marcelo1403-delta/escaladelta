@@ -248,6 +248,8 @@ var aplicarConfigPostos=async()=>{
   }
   renderResponsaveisViews();
   renderResponsaveisPostos();
+  if(typeof salvarResponsaveisDados==="function")salvarResponsaveisDados({permitirVazio:true});
+  salvarLocalEmergencial?.();
   atualizarDisponibilidadeColuna();
   try{
     var firebase=await aguardarFirebaseSync(4000);
@@ -265,7 +267,9 @@ var aplicarConfigPostos=async()=>{
       versao:Number(matrizBase?.versao||1),
       tipo:"matriz-dados",
       salvoEm:new Date().toISOString(),
-      configPostos:postoRows.map((row)=>[...row])
+      configPostos:postoRows.map((row)=>[...row]),
+      responsaveisVersao:2,
+      responsaveis:typeof snapshotResponsaveis==="function"?snapshotResponsaveis().map((row)=>({...row})):matrizBase.responsaveis
     };
     var result=await firebase.salvar(matriz,MATRIZ_DOC_ID,{status:"aberto"});
     if(result?.ok){

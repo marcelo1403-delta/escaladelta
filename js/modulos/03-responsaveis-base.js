@@ -15,7 +15,7 @@ var chaveResp=(row)=>`${normResp(row.forca)}|${normResp(row.plantao)}|${normResp
 var montarRespRowsPostos=()=>{
   var rows=[];
   postoRows.forEach((posto)=>{
-  if(posto[2]!=="ATIVO"||posto[3]!=="SIM")return;
+  if(posto[2]!=="ATIVO"||posto[3]!=="SIM"||posto[4]!=="SIM")return;
   var forcasResponsavel=(()=>{
     var forcas=[];
     if(posto[7]==="SIM"||posto[11]==="SIM")forcas.push("PPF");

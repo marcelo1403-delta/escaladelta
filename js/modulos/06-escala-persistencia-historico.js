@@ -710,7 +710,7 @@ var baixarJson=(nome,estado)=>{
   URL.revokeObjectURL(url);
 };
 var cloneGestao=(value)=>JSON.parse(JSON.stringify(value||{}));
-var MATRIZ_KEYS_SERVIDOR=["id","matricula","nome","nomecurto","forca","status","plantao","turno","setor","motivoapoio","jornada","horario","motivoausencia","substituto","infoausencia","plantao_pgto_permuta","id_pgto_permuta","status_pgto"];
+var MATRIZ_KEYS_SERVIDOR=["id","matricula","nome","nomecurto","forca","status","plantao","turno","setor","motivoapoio","jornada","horario","motivoausencia","substituto","infoausencia","plantao_pgto_permuta","id_pgto_permuta","status_pgto","grupo"];
 var normalizarServidorMatriz=(servidor={})=>{
   var out={};
   MATRIZ_KEYS_SERVIDOR.forEach((key)=>{out[key]=servidor?.[key]??"";});

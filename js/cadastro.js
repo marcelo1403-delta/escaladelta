@@ -32,7 +32,8 @@
     "substituto",
     "plantao_pgto_permuta",
     "id_pgto_permuta",
-    "status_pgto"
+    "status_pgto",
+    "grupo"
   ];
 
   let servidores = [];
@@ -74,7 +75,8 @@
       infoausencia: txt(s.infoausencia).toUpperCase(),
       plantao_pgto_permuta: txt(s.plantao_pgto_permuta).toUpperCase(),
       id_pgto_permuta: txt(s.id_pgto_permuta),
-      status_pgto: txt(s.status_pgto).toUpperCase()
+      status_pgto: txt(s.status_pgto).toUpperCase(),
+      grupo: nomeGrupo(s.grupo)
     };
   }
 
@@ -261,7 +263,8 @@
       infoausencia: getVal("svInfoAusencia").slice(0, 30),
       plantao_pgto_permuta: atual.plantao_pgto_permuta || "",
       id_pgto_permuta: atual.id_pgto_permuta || "",
-      status_pgto: getVal("svStatusPgto") || atual.status_pgto || ""
+      status_pgto: getVal("svStatusPgto") || atual.status_pgto || "",
+      grupo: atual.grupo || ""
     });
   }
 
@@ -291,6 +294,7 @@
       <td class="c-pgto">${esc(dash(s.plantao_pgto_permuta))}</td>
       <td class="c-idpgto">${esc(dash(s.id_pgto_permuta))}</td>
       <td class="c-statuspgto">${esc(dash(s.status_pgto))}</td>
+      <td class="c-grupo">${esc(dash(s.grupo))}</td>
     </tr>`;
   }
 
@@ -387,7 +391,9 @@
     const id = getVal("svId");
     const hasId = Boolean(id);
     const reg = servidores.find((s) => s.id === id);
-    const hasPlantao = Boolean(reg && reg.plantao);
+    const formPlantao = Boolean(getVal("svPlantao"));
+    const recChecked = Boolean($("svRecorrente")?.checked);
+    const hasPlantao = Boolean(reg && reg.plantao) || formPlantao;
     const isPgtoReg = Boolean(reg && permutaOrigemDoPgto(reg));
 
     $("svForm")?.classList.toggle("sv-loaded", hasId);
@@ -403,7 +409,7 @@
 
     ["svPlantao", "svTurno", "svSetor"].forEach((idCampo) => {
       const el = $(idCampo);
-      if (el) el.disabled = false;
+      if (el) el.disabled = recChecked;
     });
 
     const canSec3 = hasId;
@@ -415,7 +421,7 @@
       el.disabled = !canSec3;
       if (!canSec3) el.value = "";
     });
-    if (grupoDoServidorRecorrente(id)) setCamposPresencaServidorDisabled(true);
+    if (recChecked) setCamposPresencaServidorDisabled(true);
     setSectionEnabled(3, canSec3);
 
     const canSec4 = hasId && hasPlantao;
@@ -574,7 +580,12 @@
     const sec3 = v.motivoapoio || v.jornada || v.horario;
     if (sec3 && !v.motivoapoio) return fail("CAMPO OBRIGATORIO: MOTIVO PRESENCA");
     if (sec3 && !v.jornada) return fail("CAMPO OBRIGATORIO: JORNADA");
-    if ($("svRecorrente")?.checked && !$("svRecGrupo")?.value) return fail("CAMPO OBRIGATORIO: GRUPO");
+    if ($("svRecorrente")?.checked) {
+      if (v.plantao) return fail("RECORRENTE DISPONIVEL APENAS SEM PLANTAO FIXO");
+      if (!$("svRecGrupo")?.value) return fail("CAMPO OBRIGATORIO: GRUPO");
+      const grupo = grupoExtraPorId($("svRecGrupo")?.value);
+      if (!grupo?.motivo || !grupo?.jornada) return fail("GRUPO RECORRENTE SEM MOTIVO/JORNADA");
+    }
 
     const sec4 = v.motivoausencia || v.substituto || v.infoausencia;
     if (sec4 && !v.motivoausencia) return fail("CAMPO OBRIGATORIO: MOTIVO AUSENCIA");
@@ -688,6 +699,19 @@
       isPgtoReg = Boolean(antigo && permutaOrigemDoPgto(antigo));
     }
 
+    if ($("svRecorrente")?.checked) {
+      const grupo = grupoExtraPorId($("svRecGrupo")?.value);
+      if (grupo) {
+        v.plantao = "";
+        v.turno = "";
+        v.setor = "";
+        v.motivoapoio = grupo.motivo;
+        v.jornada = grupo.jornada;
+        v.horario = grupo.horario || "";
+        v.grupo = grupo.nome;
+      }
+    }
+
     if (!isInsert && norm(v.status) === "INATIVO") {
       v.plantao = "";
       v.turno = "";
@@ -701,6 +725,7 @@
       v.plantao_pgto_permuta = "";
       v.id_pgto_permuta = "";
       v.status_pgto = "";
+      v.grupo = "";
     }
 
     if (isPgtoReg && norm(v.status_pgto || antigo?.status_pgto || "PRESENTE") === "PRESENTE") {
@@ -726,9 +751,13 @@
     }
 
     if (!isPgtoReg) aplicarPermuta(v, antigo);
-    if ($("svRecorrente")?.checked) {
-      associarServidorAoGrupoRecorrente(v.id, txt($("svRecGrupo")?.value), v.motivoapoio, v.jornada, v.horario);
+    if ($("svRecorrente")?.checked && !v.plantao && norm(v.status) !== "INATIVO") {
+      const grupo = grupoExtraPorId(txt($("svRecGrupo")?.value));
+      associarServidorAoGrupoRecorrente(v.id, txt($("svRecGrupo")?.value), grupo?.motivo, grupo?.jornada, grupo?.horario);
+    } else {
+      removerServidorDosGruposRecorrentes(v.id);
     }
+    sincronizarGrupoServidores();
     renderTable();
     clearForm();
     sincronizarAbaEscala();
@@ -1502,6 +1531,26 @@
     select.value = txt(valorAtual);
   }
 
+  function descricaoGrupoRecorrente(grupo) {
+    if (!grupo) return "";
+    return [grupo.motivo, grupo.jornada, grupo.horario].map(txt).filter(Boolean).join(" | ");
+  }
+
+  function grupoRecorrentePorNome(nome) {
+    const alvo = nomeGrupo(nome);
+    if (!alvo) return null;
+    carregarGruposExtra();
+    return gruposExtraRecorrente.find((grupo) => nomeGrupo(grupo.nome) === alvo) || null;
+  }
+
+  function atualizarDescricaoGrupoServidor(grupoId = getVal("svRecGrupo")) {
+    const desc = $("svRecDescricao");
+    if (!desc) return;
+    const grupo = grupoExtraPorId(grupoId);
+    desc.textContent = descricaoGrupoRecorrente(grupo);
+    desc.classList.toggle("is-hidden", !desc.textContent);
+  }
+
   function setCamposPresencaServidor(motivo, jornada, horario) {
     setVal("svMotivoApoio", motivo || "");
     setVal("svJornada", jornada || "");
@@ -1516,12 +1565,26 @@
   }
 
   function alternarCamposGrupoServidor() {
-    const ativo = Boolean($("svRecorrente")?.checked);
+    const check = $("svRecorrente");
+    const select = $("svRecGrupo");
+    const temPlantao = Boolean(getVal("svPlantao"));
+    if (check && temPlantao) check.checked = false;
+    const ativo = Boolean(check?.checked) && !temPlantao;
     document.querySelectorAll(".sv-rec-field").forEach((el) => el.classList.toggle("is-hidden", !ativo));
+    if (check) check.disabled = temPlantao;
+    if (select) select.disabled = !ativo;
     if (!ativo) {
-      if ($("svRecGrupo")) $("svRecGrupo").value = "";
+      if (select) select.value = "";
       alternarEditorGrupoServidor(false);
+      atualizarDescricaoGrupoServidor("");
+      setCamposPresencaServidorDisabled(false);
+      updateLocks();
+      return;
     }
+    ["svPlantao", "svTurno", "svSetor"].forEach((idCampo) => setVal(idCampo, ""));
+    preencherGrupoServidorNoForm(select?.value);
+    setCamposPresencaServidorDisabled(true);
+    updateLocks();
   }
 
   function alternarEditorGrupoServidor(abrir) {
@@ -1552,7 +1615,11 @@
 
   function preencherGrupoServidorNoForm(grupoId) {
     const grupo = grupoExtraPorId(grupoId);
-    if (!grupo) return;
+    atualizarDescricaoGrupoServidor(grupoId);
+    if (!grupo) {
+      setCamposPresencaServidor("", "", "");
+      return;
+    }
     if (grupo.motivo || grupo.jornada || grupo.horario) {
       setCamposPresencaServidor(grupo.motivo, grupo.jornada, grupo.horario);
     }
@@ -1571,6 +1638,8 @@
       grupo.membros = grupo.membros.filter((id) => id !== txt(servidorId));
       if (grupo.estados) delete grupo.estados[txt(servidorId)];
     });
+    const servidor = servidores.find((s) => s.id === txt(servidorId));
+    if (servidor) servidor.grupo = "";
     salvarGruposExtra();
   }
 
@@ -1589,6 +1658,8 @@
     if (!grupo.membros.includes(servidorId)) grupo.membros.push(servidorId);
     grupo.estados = grupo.estados || {};
     grupo.estados[servidorId] = Boolean(motivo && jornada);
+    const servidor = servidores.find((s) => s.id === servidorId);
+    if (servidor) servidor.grupo = grupo.nome;
     salvarGruposExtra();
     return grupo;
   }
@@ -1614,6 +1685,7 @@
     grupo.membros.forEach((id) => {
       const servidor = servidores.find((s) => s.id === id);
       if (!servidor) return;
+      servidor.grupo = grupo.nome;
       if (estadoMembroRecorrente(grupo, id)) {
         servidor.motivoapoio = grupo.motivo;
         servidor.jornada = grupo.jornada;
@@ -1629,6 +1701,17 @@
   function aplicarTodosRecorrentesPadraoEmServidores() {
     carregarGruposExtra();
     gruposExtraRecorrente.forEach(aplicarGrupoRecorrenteEmServidores);
+    sincronizarGrupoServidores();
+  }
+
+  function sincronizarGrupoServidores() {
+    const porId = new Map();
+    gruposExtraRecorrente.forEach((grupo) => {
+      grupo.membros.forEach((id) => porId.set(id, grupo.nome));
+    });
+    servidores.forEach((servidor) => {
+      servidor.grupo = porId.get(servidor.id) || "";
+    });
   }
 
   function renderServidorRecorrenteForm() {
@@ -1636,22 +1719,28 @@
     const servidor = servidores.find((s) => s.id === servidorId);
     const grupo = servidorId ? grupoDoServidorRecorrente(servidorId) : null;
     const canSec3 = Boolean(servidorId);
+    const temPlantao = Boolean(getVal("svPlantao") || servidor?.plantao);
     const control = $("svRecControl");
     const banner = $("svRecBanner");
     const table = $("svRecTable");
     const tbody = $("svRecTbody");
 
-    popularSelectGrupos($("svRecGrupo"), "");
-    if ($("svRecorrente")) $("svRecorrente").checked = false;
-    alternarCamposGrupoServidor();
+    popularSelectGrupos($("svRecGrupo"), grupo?.id || "");
+    if ($("svRecorrente")) {
+      $("svRecorrente").checked = Boolean(grupo) && !temPlantao;
+      $("svRecorrente").disabled = !canSec3 || temPlantao;
+    }
     alternarEditorGrupoServidor(false);
 
-    control?.classList.toggle("is-hidden", Boolean(grupo) || !canSec3);
-    banner?.classList.toggle("is-hidden", !grupo);
-    table?.classList.toggle("is-hidden", !grupo);
+    control?.classList.toggle("is-hidden", !canSec3);
+    banner?.classList.add("is-hidden");
+    table?.classList.add("is-hidden");
 
-    if (!grupo || !servidor || !tbody) {
-      if (tbody) tbody.innerHTML = "";
+    if (tbody) tbody.innerHTML = "";
+
+    if (!grupo || !servidor || temPlantao) {
+      setCamposPresencaServidorDisabled(false);
+      alternarCamposGrupoServidor();
       return;
     }
 
@@ -1670,6 +1759,7 @@
         <td><div class="sv-rec-actions"><button class="sv-rec-icon sv-rec-edit" type="button" title="Editar">✎</button><span></span><button class="sv-rec-icon sv-rec-remove" type="button" title="Remover">×</button></div></td>
       </tr>
     `;
+    alternarCamposGrupoServidor();
   }
 
   function renderServidorRecorrenteEditavel(row) {
@@ -1694,6 +1784,7 @@
     servidor.motivoapoio = destino.motivo;
     servidor.jornada = destino.jornada;
     servidor.horario = destino.horario || "";
+    servidor.grupo = destino.nome;
     renderTable();
     fillForm(servidor);
     sincronizarAbaEscala();
@@ -1710,10 +1801,12 @@
       servidor.motivoapoio = grupo.motivo;
       servidor.jornada = grupo.jornada;
       servidor.horario = grupo.horario || "";
+      servidor.grupo = grupo.nome;
     } else {
       servidor.motivoapoio = "";
       servidor.jornada = "";
       servidor.horario = "";
+      servidor.grupo = grupo.nome;
     }
     salvarGruposExtra();
     renderTable();
@@ -1742,6 +1835,7 @@
       servidor.motivoapoio = "";
       servidor.jornada = "";
       servidor.horario = "";
+      servidor.grupo = "";
       renderTable();
       fillForm(servidor);
       sincronizarAbaEscala();
@@ -1755,13 +1849,43 @@
     if (label) label.textContent = servidor ? nomeCompletoServidor(servidor) : "";
   }
 
+  function atualizarRecorrenciaExtraPorNomes() {
+    const ids = Array.from(document.querySelectorAll("#extraNomesWrap .extraNomeSelect"))
+      .map((select) => txt(select.value))
+      .filter(Boolean);
+    const servidoresSelecionados = ids.map((id) => servidores.find((s) => s.id === id)).filter(Boolean);
+    const bloqueado = servidoresSelecionados.some((servidor) => Boolean(servidor.plantao));
+    const check = $("extraRecorrente");
+    if (check) check.disabled = bloqueado;
+    if (bloqueado) {
+      if (check) check.checked = false;
+      alternarCamposGrupoExtra();
+      return;
+    }
+    if (servidoresSelecionados.length === 1) {
+      const grupo = grupoDoServidorRecorrente(servidoresSelecionados[0].id) || grupoRecorrentePorNome(servidoresSelecionados[0].grupo);
+      if (grupo) {
+        if (check) check.checked = true;
+        popularGruposExtra(grupo.id);
+        alternarCamposGrupoExtra();
+        preencherGrupoExtraNoPopover(grupo.id);
+        return;
+      }
+    }
+    if (check) check.checked = false;
+    popularGruposExtra("");
+    alternarCamposGrupoExtra();
+  }
+
   function carregarGruposExtra() {
     try {
       const salvos = JSON.parse(localStorage.getItem(EXTRA_GRUPOS_KEY) || "[]");
       gruposExtraRecorrente = Array.isArray(salvos) ? salvos.map(normalizarGrupoExtra).filter(Boolean) : [];
       sanearMembrosGruposRecorrentes();
+      sincronizarGrupoServidores();
     } catch (e) {
       gruposExtraRecorrente = [];
+      sincronizarGrupoServidores();
     }
   }
 
@@ -1806,6 +1930,13 @@
     select.value = txt(valorAtual);
   }
 
+  function atualizarDescricaoGrupoExtra(grupoId = $("extraGrupoSelect")?.value) {
+    const desc = $("extraGrupoDescricao");
+    if (!desc) return;
+    desc.textContent = descricaoGrupoRecorrente(grupoExtraPorId(grupoId));
+    desc.classList.toggle("is-hidden", !desc.textContent);
+  }
+
   function normalizarGrupoExtra(item) {
     if (!item) return null;
     if (typeof item === "string") {
@@ -1839,7 +1970,8 @@
     const vistos = new Set();
     gruposExtraRecorrente.forEach((grupo) => {
       grupo.membros = grupo.membros.filter((id) => {
-        if (!servidores.some((s) => s.id === id) || vistos.has(id)) {
+        const servidor = servidores.find((s) => s.id === id);
+        if (!servidor || servidor.plantao || vistos.has(id)) {
           if (grupo.estados) delete grupo.estados[id];
           return false;
         }
@@ -1860,10 +1992,12 @@
   function alternarCamposGrupoExtra() {
     const ativo = Boolean($("extraRecorrente")?.checked);
     document.querySelectorAll(".extra-grupo-field").forEach((el) => el.classList.toggle("is-hidden", !ativo));
+    if ($("extraGrupoSelect")) $("extraGrupoSelect").disabled = !ativo;
     if (!ativo) {
       if ($("extraGrupoSelect")) $("extraGrupoSelect").value = "";
       alternarEditorGrupoExtra(false);
     }
+    atualizarDescricaoGrupoExtra(ativo ? $("extraGrupoSelect")?.value : "");
   }
 
   function alternarEditorGrupoExtra(abrir) {
@@ -1879,6 +2013,7 @@
 
   function preencherGrupoExtraNoPopover(grupoId) {
     const grupo = grupoExtraPorId(grupoId);
+    atualizarDescricaoGrupoExtra(grupoId);
     if (!grupo) return;
     if ($("extraMotivo")) $("extraMotivo").value = grupo.motivo || "";
     if ($("extraJornada")) $("extraJornada").value = grupo.jornada || "";
@@ -1993,10 +2128,12 @@
     carregarGruposExtra();
     popularGruposExtra("");
     $("extraRecorrente") && ($("extraRecorrente").checked = false);
+    $("extraRecorrente") && ($("extraRecorrente").disabled = false);
     alternarCamposGrupoExtra();
     alternarEditorGrupoExtra(false);
     msgExtra("", "");
     resetLinhasNomeExtra();
+    atualizarRecorrenciaExtraPorNomes();
     pop.classList.add("is-open");
     pop.setAttribute("aria-hidden", "false");
   }
@@ -2016,6 +2153,9 @@
     if (!jornada) return msgExtra("CAMPO OBRIGATORIO: JORNADA");
     if (!ids.length || ids.some((id) => !id)) return msgExtra("CAMPO OBRIGATORIO: NOME");
     if (new Set(ids).size !== ids.length) return msgExtra("NOME REPETIDO NA LISTA");
+    if (recorrente && ids.some((id) => servidores.find((s) => s.id === id)?.plantao)) {
+      return msgExtra("RECORRENTE DISPONIVEL APENAS PARA SERVIDOR SEM PLANTAO");
+    }
     if (recorrente && !grupoId) return msgExtra("CAMPO OBRIGATORIO: GRUPO");
 
     if (recorrente) {
@@ -2028,6 +2168,7 @@
           servidor.motivoapoio = "";
           servidor.jornada = "";
           servidor.horario = "";
+          servidor.grupo = "";
         }
       });
       gruposExtraRecorrente.forEach((outro) => {
@@ -2045,6 +2186,8 @@
         if (!Object.prototype.hasOwnProperty.call(grupo.estados, id)) grupo.estados[id] = true;
       });
       salvarGruposExtra();
+    } else {
+      ids.forEach((id) => removerServidorDosGruposRecorrentes(id));
     }
 
     ids.forEach((id) => {
@@ -2055,11 +2198,13 @@
         servidor.motivoapoio = "";
         servidor.jornada = "";
         servidor.horario = "";
+        servidor.grupo = "";
         return;
       }
       servidor.motivoapoio = motivo;
       servidor.jornada = jornada;
       servidor.horario = horario;
+      servidor.grupo = grupo?.nome || "";
     });
     concluirAcaoEfetivo(pop);
   }
@@ -2321,6 +2466,7 @@
         servidor.motivoapoio = "";
         servidor.jornada = "";
         servidor.horario = "";
+        servidor.grupo = "";
       });
     }
     gruposExtraRecorrente = gruposExtraRecorrente.filter((grupo) => grupo.id !== grupoId);
@@ -2349,6 +2495,7 @@
         servidor.motivoapoio = "";
         servidor.jornada = "";
         servidor.horario = "";
+        servidor.grupo = "";
       }
     }
     salvarGruposExtra();
@@ -2432,6 +2579,8 @@
         if (grupo.estados) delete grupo.estados[servidorId];
       });
       if (!destino.membros.includes(servidorId)) destino.membros.push(servidorId);
+      const servidor = servidores.find((s) => s.id === servidorId);
+      if (servidor) servidor.grupo = destino.nome;
       definirEstadoMembroRecorrente(destino, servidorId, presente);
       row.dataset.grupoId = destino.id;
     });
@@ -2446,10 +2595,12 @@
         servidor.motivoapoio = "";
         servidor.jornada = "";
         servidor.horario = "";
+        servidor.grupo = "";
       }
     });
 
     gruposExtraRecorrente = gruposExtraRecorrente.filter((grupo) => !gruposExcluidos.has(grupo.id));
+    sincronizarGrupoServidores();
     salvarGruposExtra();
     return true;
   }
@@ -2466,6 +2617,7 @@
     if (!rows.length) return false;
     rows.forEach(({ checked, grupo, servidor }) => {
       definirEstadoMembroRecorrente(grupo, servidor.id, checked);
+      servidor.grupo = grupo.nome;
       if (checked && grupo.motivo && grupo.jornada) {
         servidor.motivoapoio = grupo.motivo;
         servidor.jornada = grupo.jornada;
@@ -2543,15 +2695,20 @@
     $("extraNomesWrap")?.addEventListener("click", (event) => {
       if (event.target.closest(".extra-add-name")) {
         criarLinhaNomeExtra("", true);
+        atualizarRecorrenciaExtraPorNomes();
         return;
       }
       if (event.target.closest(".extra-remove-name")) {
         event.target.closest(".extra-name-row")?.remove();
+        atualizarRecorrenciaExtraPorNomes();
       }
     });
     $("extraNomesWrap")?.addEventListener("change", (event) => {
       const select = event.target.closest(".extraNomeSelect");
-      if (select) atualizarNomeCompletoExtra(select.closest(".extra-name-row"));
+      if (select) {
+        atualizarNomeCompletoExtra(select.closest(".extra-name-row"));
+        atualizarRecorrenciaExtraPorNomes();
+      }
     });
     $("extraGrupoAdd")?.addEventListener("click", () => alternarEditorGrupoExtra(true));
     $("extraGrupoNome")?.addEventListener("input", (event) => {
@@ -2615,14 +2772,20 @@
     $("recNenhumPresente")?.addEventListener("change", () => setMembrosRecorrentesPresentes(false));
     $("recGravar")?.addEventListener("click", gravarExtraRecorrentes);
     $("svHorario")?.addEventListener("input", (event) => aplicarMascaraHorarioServidor(event.target));
-    $("svRecorrente")?.addEventListener("change", alternarCamposGrupoServidor);
+    $("svRecorrente")?.addEventListener("change", () => {
+      alternarCamposGrupoServidor();
+      setDirty(true);
+    });
     $("svRecAdd")?.addEventListener("click", () => alternarEditorGrupoServidor(true));
     $("svRecNomeGrupo")?.addEventListener("input", (event) => {
       const salvar = $("svRecSalvarGrupo");
       if (salvar) salvar.disabled = !txt(event.target.value);
     });
     $("svRecSalvarGrupo")?.addEventListener("click", gravarGrupoServidor);
-    $("svRecGrupo")?.addEventListener("change", (event) => preencherGrupoServidorNoForm(event.target.value));
+    $("svRecGrupo")?.addEventListener("change", (event) => {
+      preencherGrupoServidorNoForm(event.target.value);
+      setDirty(true);
+    });
     $("svRecTbody")?.addEventListener("click", (event) => {
       const row = event.target.closest("tr");
       if (!row) return;
@@ -2808,6 +2971,7 @@
       "svStatusPgto"
     ].forEach((id) => {
       $(id)?.addEventListener("change", () => {
+        if (id === "svPlantao") alternarCamposGrupoServidor();
         updateLocks();
         if (["svForca", "svPlantao", "svTurno"].includes(id)) popularSubstitutos(getVal("svSubstituto"));
         setDirty(true);

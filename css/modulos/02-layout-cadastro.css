@@ -143,7 +143,7 @@ body.aba-escala-ativa #servidoresPage{display:none}
 
 .sv-rec-control{
   display:grid;
-  grid-template-columns:25px 80px 25px 60px 90px 25px;
+  grid-template-columns:25px 80px 12px 48px minmax(120px,1fr) 25px;
   height:20px;
   margin-top:6px;
   align-items:center;
@@ -209,6 +209,24 @@ body.aba-escala-ativa #servidoresPage{display:none}
 
 .sv-rec-field.is-hidden{
   visibility:hidden;
+}
+
+.sv-rec-desc,
+.extra-grupo-desc{
+  min-height:16px;
+  margin-top:4px;
+  color:#64748b;
+  font-size:9px;
+  font-weight:800;
+  line-height:14px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.sv-rec-desc.is-hidden,
+.extra-grupo-desc.is-hidden{
+  display:none;
 }
 
 .sv-rec-editor{
@@ -691,6 +709,7 @@ body.aba-escala-ativa #servidoresPage{display:none}
 .sv-table .c-pgto{width:95px}
 .sv-table .c-idpgto{width:75px}
 .sv-table .c-statuspgto{width:105px}
+.sv-table .c-grupo{width:115px}
 
 .ws{
   min-height:calc(100% - 5px);

@@ -375,6 +375,7 @@
 <select class="sv-rec-field is-hidden" id="svRecGrupo"><option value="">GRUPO</option></select>
 <button class="sv-rec-add sv-rec-field is-hidden" id="svRecAdd" type="button">+</button>
 </div>
+<div class="sv-rec-desc is-hidden" id="svRecDescricao"></div>
 <div class="sv-rec-editor is-hidden" id="svRecEditor">
 <input id="svRecNomeGrupo" placeholder="NOME DO GRUPO" type="text"/>
 <button id="svRecSalvarGrupo" type="button" disabled title="Gravar grupo">▣</button>
@@ -448,11 +449,11 @@
 <div class="sv-table-wrap">
 <table class="sv-table">
 <colgroup>
-<col class="c-id"/><col class="c-mat"/><col class="c-nome"/><col class="c-curto"/><col class="c-forca"/><col class="c-status"/><col class="c-plantao"/><col class="c-turno"/><col class="c-setor"/><col class="c-motivo"/><col class="c-jornada"/><col class="c-horario"/><col class="c-aus"/><col class="c-sub"/><col class="c-pgto"/><col class="c-idpgto"/><col class="c-statuspgto"/>
+<col class="c-id"/><col class="c-mat"/><col class="c-nome"/><col class="c-curto"/><col class="c-forca"/><col class="c-status"/><col class="c-plantao"/><col class="c-turno"/><col class="c-setor"/><col class="c-motivo"/><col class="c-jornada"/><col class="c-horario"/><col class="c-aus"/><col class="c-sub"/><col class="c-pgto"/><col class="c-idpgto"/><col class="c-statuspgto"/><col class="c-grupo"/>
 </colgroup>
 <thead>
 <tr>
-<th>ID</th><th>MATRÍCULA</th><th>NOME COMPLETO</th><th>NOME CURTO</th><th>FORÇA</th><th>STATUS</th><th>PLANTÃO</th><th>TURNO</th><th>SETOR</th><th>MOT. PRES.</th><th>JORNADA</th><th>HORÁRIO</th><th>MOT. AUS.</th><th>SUBSTITUTO</th><th>PLANTÃO PGTO</th><th>ID PGTO</th><th>STATUS PGTO</th>
+<th>ID</th><th>MATRÍCULA</th><th>NOME COMPLETO</th><th>NOME CURTO</th><th>FORÇA</th><th>STATUS</th><th>PLANTÃO</th><th>TURNO</th><th>SETOR</th><th>MOT. PRES.</th><th>JORNADA</th><th>HORÁRIO</th><th>MOT. AUS.</th><th>SUBSTITUTO</th><th>PLANTÃO PGTO</th><th>ID PGTO</th><th>STATUS PGTO</th><th>GRUPO</th>
 </tr>
 </thead>
 <tbody id="svTbody">
@@ -640,6 +641,7 @@
 <select class="extra-grupo-field is-hidden" id="extraGrupoSelect"><option value="">GRUPO</option></select>
 <button class="extra-grupo-add extra-grupo-field is-hidden" id="extraGrupoAdd" type="button">+</button>
 </div>
+<div class="extra-grupo-desc is-hidden" id="extraGrupoDescricao"></div>
 <div class="extra-grupo-editor is-hidden" id="extraGrupoEditor">
 <input id="extraGrupoNome" placeholder="NOME DO GRUPO" type="text"/>
 <button id="extraGrupoSalvar" type="button" disabled title="Gravar grupo">▣</button>

@@ -277,15 +277,8 @@ var snapshotDomRefresh=()=>({
 });
 var aplicarDomRefresh=(dom={})=>{
   if(!dom||typeof dom!=="object")return;
-  var tbody=document.getElementById("eftCanonicoBody");
-  if(tbody&&typeof dom.efetivoBody==="string"&&dom.efetivoBody.trim())tbody.innerHTML=dom.efetivoBody;
   var msg=document.getElementById("efetivoFiltroMsg");
   if(msg&&typeof dom.filtroMsg==="string")msg.textContent=dom.filtroMsg;
-  if(Array.isArray(dom.forceSummaries)){
-    document.querySelectorAll(".force-summary").forEach((el,index)=>{
-      if(typeof dom.forceSummaries[index]==="string"&&dom.forceSummaries[index].trim())el.innerHTML=dom.forceSummaries[index];
-    });
-  }
   if(Array.isArray(dom.responsaveisTables)){
     document.querySelectorAll(".resp-card .resp-table tbody").forEach((el,index)=>{
       if(typeof dom.responsaveisTables[index]==="string")el.innerHTML=dom.responsaveisTables[index];
@@ -295,6 +288,7 @@ var aplicarDomRefresh=(dom={})=>{
   if(dia&&typeof dom.topoDiaSemana==="string"&&dom.topoDiaSemana)dia.textContent=dom.topoDiaSemana;
   var plantao=document.getElementById("topoPlantaoDia");
   if(plantao&&typeof dom.topoPlantaoDia==="string"&&dom.topoPlantaoDia)plantao.textContent=dom.topoPlantaoDia;
+  if(typeof window.renderEfetivo==="function")window.renderEfetivo();
 };
 
 var coletarEstadoPagina=()=>{

@@ -938,6 +938,14 @@
     return partes.map(txt).filter(Boolean).join(" | ");
   }
 
+  function jornadaPresencaExtra(s) {
+    return norm(s?.jornada || s?.turno);
+  }
+
+  function obsPresencaExtra(s) {
+    return obsJoin([s?.motivoapoio, jornadaPresencaExtra(s), s?.horario]);
+  }
+
   function origemPermutaDoSubstituto(substituto) {
     if (!substituto?.id_pgto_permuta) return null;
     return servidores.find((origem) => {
@@ -964,10 +972,10 @@
           id: s.id,
           nome: nomeCurtoServidor(s),
           forca: s.forca,
-          turno: s.jornada || s.turno,
+          turno: s.motivoapoio ? jornadaPresencaExtra(s) : s.turno,
           sit: "pres",
           tipo: s.motivoapoio ? "extra" : "fixo",
-          obs: s.motivoapoio ? obsJoin([s.motivoapoio, s.jornada || s.turno, s.horario]) : ""
+          obs: s.motivoapoio ? obsPresencaExtra(s) : ""
         });
         if (s.motivoapoio) extraIds.add(s.id);
         return;
@@ -1045,10 +1053,10 @@
         id: s.id,
         nome: nomeCurtoServidor(s),
         forca: s.forca,
-        turno: s.jornada || s.turno,
+        turno: jornadaPresencaExtra(s),
         sit: "pres",
         tipo: "extra",
-        obs: obsJoin([s.motivoapoio, s.jornada || s.turno, s.horario])
+        obs: obsPresencaExtra(s)
       });
       extraIds.add(s.id);
     });

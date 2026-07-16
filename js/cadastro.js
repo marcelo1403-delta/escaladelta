@@ -38,6 +38,7 @@
 
   let servidores = [];
   let gruposExtraRecorrente = [];
+  let recorrenteEstadoDataRef = null;
   const EXTRA_GRUPOS_KEY = "escala_extra_grupos_recorrentes";
 
   function lerDadosIniciais() {
@@ -892,6 +893,17 @@
     return ["DOMINGO", "SEGUNDA-FEIRA", "TERCA-FEIRA", "QUARTA-FEIRA", "QUINTA-FEIRA", "SEXTA-FEIRA", "SABADO"][data.getDay()];
   }
 
+  function dataTopoAtual() {
+    return dateFromInput($("topoDatePicker")?.value || "");
+  }
+
+  function dataTopoEhDiaUtil() {
+    const data = dataTopoAtual();
+    if (!data) return false;
+    const dia = data.getDay();
+    return dia >= 1 && dia <= 5;
+  }
+
   function atualizarTopoPlantao() {
     const data = dateFromInput($("topoDatePicker")?.value || "");
     const diaEl = $("topoDiaSemana");
@@ -939,6 +951,8 @@
 
   function montarEfetivo(forca, plantao) {
     const rows = [];
+    const extraIds = new Set();
+    aplicarEstadoPadraoRecorrentesPorData();
     const ativos = servidores.filter((s) => norm(s.status || "ATIVO") === "ATIVO" && norm(s.forca) === forca);
 
     ativos.forEach((s) => {
@@ -953,8 +967,9 @@
           turno: s.jornada || s.turno,
           sit: "pres",
           tipo: s.motivoapoio ? "extra" : "fixo",
-          obs: s.motivoapoio ? obsJoin([s.motivoapoio, s.turno, s.horario]) : ""
+          obs: s.motivoapoio ? obsJoin([s.motivoapoio, s.jornada || s.turno, s.horario]) : ""
         });
+        if (s.motivoapoio) extraIds.add(s.id);
         return;
       }
 
@@ -1030,10 +1045,34 @@
         id: s.id,
         nome: nomeCurtoServidor(s),
         forca: s.forca,
-        turno: s.jornada,
+        turno: s.jornada || s.turno,
         sit: "pres",
         tipo: "extra",
-        obs: obsJoin([s.motivoapoio, s.turno, s.horario])
+        obs: obsJoin([s.motivoapoio, s.jornada || s.turno, s.horario])
+      });
+      extraIds.add(s.id);
+    });
+
+    gruposExtraRecorrente.forEach((grupo) => {
+      const motivo = norm(grupo.motivo);
+      const jornada = norm(grupo.jornada);
+      if (!motivo || !jornada) return;
+      servidoresDoGrupoRecorrente(grupo).forEach((s) => {
+        if (extraIds.has(s.id)) return;
+        if (norm(s.status || "ATIVO") !== "ATIVO") return;
+        if (norm(s.forca) !== forca) return;
+        if (norm(s.motivoausencia)) return;
+        if (!estadoMembroRecorrente(grupo, s.id)) return;
+        rows.push({
+          id: s.id,
+          nome: nomeCurtoServidor(s),
+          forca: s.forca,
+          turno: jornada,
+          sit: "pres",
+          tipo: "extra",
+          obs: obsJoin([motivo, jornada, grupo.horario])
+        });
+        extraIds.add(s.id);
       });
     });
 
@@ -1668,10 +1707,31 @@
     return Boolean(servidor?.motivoapoio && servidor?.jornada);
   }
 
+  function estadoPadraoRecorrente() {
+    return dataTopoEhDiaUtil();
+  }
+
+  function aplicarEstadoPadraoRecorrentesPorData() {
+    const ref = txt($("topoDatePicker")?.value);
+    if (recorrenteEstadoDataRef === ref) return;
+    recorrenteEstadoDataRef = ref;
+    carregarGruposExtra();
+    sincronizarMembrosGruposPorServidores();
+    const marcado = estadoPadraoRecorrente();
+    gruposExtraRecorrente.forEach((grupo) => {
+      grupo.estados = {};
+      grupo.membros.forEach((id) => {
+        grupo.estados[id] = marcado;
+      });
+    });
+    gruposExtraRecorrente.forEach(aplicarGrupoRecorrenteEmServidores);
+    sincronizarGrupoServidores();
+  }
+
   function estadoMembroRecorrente(grupo, servidorId) {
     if (!grupo || !servidorId) return false;
     if (Object.prototype.hasOwnProperty.call(grupo.estados || {}, servidorId)) return grupo.estados[servidorId] !== false;
-    return estadoAtualServidorRecorrente(servidores.find((s) => s.id === servidorId));
+    return estadoPadraoRecorrente() || estadoAtualServidorRecorrente(servidores.find((s) => s.id === servidorId));
   }
 
   function definirEstadoMembroRecorrente(grupo, servidorId, presente) {
@@ -2128,15 +2188,8 @@
     }
 
     if (inputHorario) inputHorario.value = "";
-    carregarGruposExtra();
-    popularGruposExtra("");
-    $("extraRecorrente") && ($("extraRecorrente").checked = false);
-    $("extraRecorrente") && ($("extraRecorrente").disabled = false);
-    alternarCamposGrupoExtra();
-    alternarEditorGrupoExtra(false);
     msgExtra("", "");
     resetLinhasNomeExtra();
-    atualizarRecorrenciaExtraPorNomes();
     pop.classList.add("is-open");
     pop.setAttribute("aria-hidden", "false");
   }
@@ -2149,65 +2202,18 @@
     const horario = txt($("extraHorario")?.value).toUpperCase();
     const selects = Array.from(pop.querySelectorAll(".extraNomeSelect"));
     const ids = selects.map((select) => txt(select.value));
-    const recorrente = Boolean($("extraRecorrente")?.checked);
-    const grupoId = txt($("extraGrupoSelect")?.value);
 
     if (!motivo) return msgExtra("CAMPO OBRIGATORIO: MOTIVO PRESENCA");
     if (!jornada) return msgExtra("CAMPO OBRIGATORIO: JORNADA");
     if (!ids.length || ids.some((id) => !id)) return msgExtra("CAMPO OBRIGATORIO: NOME");
     if (new Set(ids).size !== ids.length) return msgExtra("NOME REPETIDO NA LISTA");
-    if (recorrente && ids.some((id) => servidores.find((s) => s.id === id)?.plantao)) {
-      return msgExtra("RECORRENTE DISPONIVEL APENAS PARA SERVIDOR SEM PLANTAO");
-    }
-    if (recorrente && !grupoId) return msgExtra("CAMPO OBRIGATORIO: GRUPO");
-
-    if (recorrente) {
-      const grupo = grupoExtraPorId(grupoId);
-      if (!grupo) return msgExtra("GRUPO NAO ENCONTRADO");
-      const removidos = grupo.membros.filter((id) => !ids.includes(id));
-      removidos.forEach((id) => {
-        const servidor = servidores.find((s) => s.id === id);
-        if (servidor) {
-          servidor.motivoapoio = "";
-          servidor.jornada = "";
-          servidor.horario = "";
-          servidor.grupo = "";
-        }
-      });
-      gruposExtraRecorrente.forEach((outro) => {
-        if (outro.id === grupo.id) return;
-        outro.membros = outro.membros.filter((id) => !ids.includes(id));
-        ids.forEach((id) => { if (outro.estados) delete outro.estados[id]; });
-      });
-      grupo.motivo = motivo;
-      grupo.jornada = jornada;
-      grupo.horario = horario;
-      grupo.membros = ids.slice();
-      grupo.estados = grupo.estados || {};
-      Object.keys(grupo.estados).forEach((id) => { if (!ids.includes(id)) delete grupo.estados[id]; });
-      ids.forEach((id) => {
-        if (!Object.prototype.hasOwnProperty.call(grupo.estados, id)) grupo.estados[id] = true;
-      });
-      salvarGruposExtra();
-    } else {
-      ids.forEach((id) => removerServidorDosGruposRecorrentes(id));
-    }
 
     ids.forEach((id) => {
       const servidor = servidores.find((s) => s.id === id);
       if (!servidor) return;
-      const grupo = recorrente ? grupoExtraPorId(grupoId) : null;
-      if (grupo && !estadoMembroRecorrente(grupo, id)) {
-        servidor.motivoapoio = "";
-        servidor.jornada = "";
-        servidor.horario = "";
-        servidor.grupo = "";
-        return;
-      }
       servidor.motivoapoio = motivo;
       servidor.jornada = jornada;
       servidor.horario = horario;
-      servidor.grupo = grupo?.nome || "";
     });
     concluirAcaoEfetivo(pop);
   }
@@ -2217,6 +2223,7 @@
     if (!pop) return;
     const somenteLeitura = typeof escalaEncerradaSomenteLeitura === "function" && escalaEncerradaSomenteLeitura();
     carregarGruposExtra();
+    aplicarEstadoPadraoRecorrentesPorData();
     if (!somenteLeitura) aplicarTodosRecorrentesPadraoEmServidores();
     renderGruposRecorrentes();
     renderMembrosRecorrentes(gruposSelecionadosRecorrentes());
@@ -2243,6 +2250,189 @@
     master.checked = checks.length > 0 && checks.every((input) => input.checked);
   }
 
+  function servidoresDoGrupoRecorrente(grupo) {
+    const nome = nomeGrupo(grupo?.nome);
+    if (!nome) return [];
+    return servidores.filter((servidor) => nomeGrupo(servidor.grupo) === nome);
+  }
+
+  function sincronizarMembrosGruposPorServidores() {
+    gruposExtraRecorrente.forEach((grupo) => {
+      const ids = servidoresDoGrupoRecorrente(grupo).map((servidor) => servidor.id);
+      grupo.membros = ids;
+      grupo.estados = grupo.estados || {};
+      Object.keys(grupo.estados).forEach((id) => {
+        if (!ids.includes(id)) delete grupo.estados[id];
+      });
+      ids.forEach((id) => {
+        if (!Object.prototype.hasOwnProperty.call(grupo.estados, id)) grupo.estados[id] = estadoPadraoRecorrente();
+      });
+    });
+  }
+
+  function servidoresElegiveisNovoRecorrente() {
+    return servidores
+      .filter((servidor) => norm(servidor.status || "ATIVO") === "ATIVO")
+      .filter((servidor) => norm(servidor.forca) === "PPF")
+      .filter((servidor) => !servidor.plantao && !servidor.grupo)
+      .sort((a, b) => nomeCurtoServidor(a).localeCompare(nomeCurtoServidor(b), "pt-BR"));
+  }
+
+  function opcoesServidoresElegiveis(valorAtual = "") {
+    const usados = Array.from(document.querySelectorAll(".rec-pessoa-select"))
+      .map((select) => txt(select.value))
+      .filter((id) => id && id !== valorAtual);
+    return servidoresElegiveisNovoRecorrente()
+      .filter((servidor) => servidor.id === valorAtual || !usados.includes(servidor.id))
+      .map((servidor) => `<option value="${esc(servidor.id)}"${servidor.id === valorAtual ? " selected" : ""}>${esc(nomeCurtoServidor(servidor))}</option>`)
+      .join("");
+  }
+
+  function recMsg(overlay, texto, tipo = "erro") {
+    const el = overlay?.querySelector(".rec-pop-msg");
+    if (!el) return;
+    el.textContent = texto || "";
+    el.dataset.tipo = tipo;
+  }
+
+  function sucessoPopover(texto, onDone) {
+    const overlay = popover(`<p class="sv-pop-title">${esc(texto)}</p>`);
+    setTimeout(() => {
+      overlay.remove();
+      if (typeof onDone === "function") onDone();
+    }, 2000);
+  }
+
+  function abrirPopoverNovoGrupo() {
+    const overlay = popover(`
+      <p class="sv-pop-title">CRIAR NOVO GRUPO</p>
+      <div class="rec-pop-fields">
+        <label>NOME<input id="recNovoGrupoNome" type="text" maxlength="40"></label>
+        <label>MOTIVO<input id="recNovoGrupoMotivo" type="text" value="APOIO" disabled></label>
+        <label>TURNO<select id="recNovoGrupoTurno"><option value="">TURNO</option><option>DIURNO</option><option>NOTURNO</option></select></label>
+        <label>HORARIO<input id="recNovoGrupoHorario" type="text" maxlength="13" inputmode="numeric" placeholder="00:00 - 00:00"></label>
+      </div>
+      <div class="rec-pop-msg"></div>
+      <div class="sv-pop-actions">
+        <button class="sv-pop-cancel" id="recNovoGrupoCancelar" type="button">CANCELAR</button>
+        <button class="sv-pop-confirm" id="recNovoGrupoGravar" type="button">GRAVAR</button>
+      </div>
+    `);
+    const nome = overlay.querySelector("#recNovoGrupoNome");
+    const horario = overlay.querySelector("#recNovoGrupoHorario");
+    nome?.addEventListener("input", () => { nome.value = nomeGrupo(nome.value); });
+    horario?.addEventListener("input", () => aplicarMascaraHorarioExtra(horario));
+    overlay.querySelector("#recNovoGrupoCancelar")?.addEventListener("click", () => overlay.remove());
+    overlay.querySelector("#recNovoGrupoGravar")?.addEventListener("click", () => {
+      const nomeGrupoNovo = nomeGrupo(nome?.value);
+      const turno = norm(overlay.querySelector("#recNovoGrupoTurno")?.value);
+      const horarioValor = txt(horario?.value).toUpperCase();
+      if (!nomeGrupoNovo) return recMsg(overlay, "NOME OBRIGATORIO");
+      if (!turno) return recMsg(overlay, "TURNO OBRIGATORIO");
+      if (!horarioValor) return recMsg(overlay, "HORARIO OBRIGATORIO");
+      const nomesTabela = Array.from(document.querySelectorAll("#recGruposBody tr:not([data-pending-delete='1']) td:nth-child(2)"))
+        .map((td) => nomeGrupo(td.textContent));
+      if (nomesTabela.includes(nomeGrupoNovo)) return recMsg(overlay, "NOME DO GRUPO JA EXISTE");
+      carregarGruposExtra();
+      if (gruposExtraRecorrente.some((grupo) => nomeGrupo(grupo.nome) === nomeGrupoNovo)) return recMsg(overlay, "NOME DO GRUPO JA EXISTE");
+      gruposExtraRecorrente.push({
+        id: novoIdGrupoExtra(nomeGrupoNovo),
+        nome: nomeGrupoNovo,
+        motivo: "APOIO",
+        jornada: turno,
+        horario: horarioValor,
+        membros: [],
+        estados: {}
+      });
+      salvarGruposExtra();
+      renderGruposRecorrentes();
+      renderMembrosRecorrentes(gruposSelecionadosRecorrentes());
+      overlay.remove();
+      sucessoPopover("GRAVADO COM SUCESSO!");
+    });
+    setTimeout(() => nome?.focus(), 30);
+  }
+
+  function criarLinhaPessoaGrupo(container, valor = "", removivel = true) {
+    const row = document.createElement("div");
+    row.className = "rec-pessoa-row";
+    row.innerHTML = `
+      <label>NOME<select class="rec-pessoa-select"><option value="">NOME</option>${opcoesServidoresElegiveis(valor)}</select></label>
+      <button class="rec-pessoa-add" type="button">+</button>
+      <button class="rec-pessoa-remove" type="button"${removivel ? "" : " disabled"}>X</button>
+    `;
+    container.appendChild(row);
+    return row;
+  }
+
+  function atualizarOpcoesPessoasGrupo(overlay) {
+    overlay.querySelectorAll(".rec-pessoa-select").forEach((select) => {
+      const valor = txt(select.value);
+      select.innerHTML = `<option value="">NOME</option>${opcoesServidoresElegiveis(valor)}`;
+      select.value = valor;
+    });
+  }
+
+  function abrirPopoverIncluirPessoasGrupo(grupoId) {
+    const grupo = grupoExtraPorId(grupoId);
+    if (!grupo) return;
+    const overlay = popover(`
+      <p class="sv-pop-title">INCLUIR PESSOAS NO GRUPO</p>
+      <p class="sv-pop-text"><b>${esc(grupo.nome)}</b></p>
+      <div class="rec-pessoas-list" id="recPessoasList"></div>
+      <div class="rec-pop-msg"></div>
+      <div class="sv-pop-actions">
+        <button class="sv-pop-cancel" id="recPessoasCancelar" type="button">CANCELAR</button>
+        <button class="sv-pop-confirm" id="recPessoasGravar" type="button">GRAVAR</button>
+      </div>
+    `);
+    const lista = overlay.querySelector("#recPessoasList");
+    criarLinhaPessoaGrupo(lista, "", false);
+    lista.addEventListener("click", (event) => {
+      if (event.target.closest(".rec-pessoa-add")) {
+        criarLinhaPessoaGrupo(lista, "", true);
+        atualizarOpcoesPessoasGrupo(overlay);
+        return;
+      }
+      if (event.target.closest(".rec-pessoa-remove")) {
+        event.target.closest(".rec-pessoa-row")?.remove();
+        atualizarOpcoesPessoasGrupo(overlay);
+      }
+    });
+    lista.addEventListener("change", (event) => {
+      if (event.target.closest(".rec-pessoa-select")) atualizarOpcoesPessoasGrupo(overlay);
+    });
+    overlay.querySelector("#recPessoasCancelar")?.addEventListener("click", () => overlay.remove());
+    overlay.querySelector("#recPessoasGravar")?.addEventListener("click", () => {
+      const ids = Array.from(overlay.querySelectorAll(".rec-pessoa-select")).map((select) => txt(select.value)).filter(Boolean);
+      if (!ids.length) return recMsg(overlay, "SELECIONE AO MENOS UM NOME");
+      if (new Set(ids).size !== ids.length) return recMsg(overlay, "NOME REPETIDO");
+      for (const id of ids) {
+        const servidor = servidores.find((s) => s.id === id);
+        if (!servidor) return recMsg(overlay, "NOME NAO LOCALIZADO");
+        if (norm(servidor.status || "ATIVO") !== "ATIVO" || norm(servidor.forca) !== "PPF" || servidor.plantao || servidor.grupo) {
+          return recMsg(overlay, `${nomeCurtoServidor(servidor)} NAO ESTA DISPONIVEL`);
+        }
+      }
+      ids.forEach((id) => {
+        const servidor = servidores.find((s) => s.id === id);
+        servidor.grupo = grupo.nome;
+        servidor.motivoapoio = grupo.motivo || servidor.motivoapoio;
+        servidor.jornada = grupo.jornada || servidor.jornada;
+        servidor.horario = grupo.horario || servidor.horario;
+      });
+      sincronizarMembrosGruposPorServidores();
+      aplicarGrupoRecorrenteEmServidores(grupo);
+      sincronizarGrupoServidores();
+      salvarGruposExtra();
+      renderTable();
+      renderMembrosRecorrentes(gruposSelecionadosRecorrentes());
+      atualizarPopoverRecorrentesAberto();
+      overlay.remove();
+      sucessoPopover("GRAVADO COM SUCESSO!");
+    });
+  }
+
   function renderGruposRecorrentes() {
     const tbody = $("recGruposBody");
     if (!tbody) return;
@@ -2257,6 +2447,15 @@
         <td><div class="rec-row-actions"><button class="rec-icon-btn rec-edit" type="button" title="Editar">✎</button><span></span><button class="rec-icon-btn rec-delete" type="button" title="Remover">×</button></div></td>
       </tr>
     `).join("") : `<tr><td colspan="6">NENHUM GRUPO RECORRENTE</td></tr>`;
+    tbody.querySelectorAll("tr[data-grupo-id] .rec-row-actions").forEach((actions) => {
+      if (actions.querySelector(".rec-add-person")) return;
+      const btn = document.createElement("button");
+      btn.className = "rec-icon-btn rec-add-person";
+      btn.type = "button";
+      btn.title = "incluir pessoas no grupo";
+      btn.textContent = "+☺";
+      actions.prepend(btn);
+    });
     atualizarCheckTodosGrupos();
   }
 
@@ -2358,9 +2557,9 @@
       atualizarOpcoesPresencaRecorrente();
       return;
     }
-    const membros = grupos.flatMap((grupo) => grupo.membros
-      .map((id) => ({ grupo, servidor: servidores.find((s) => s.id === id) }))
-      .filter((item) => item.servidor)
+    sincronizarMembrosGruposPorServidores();
+    const membros = grupos.flatMap((grupo) => servidoresDoGrupoRecorrente(grupo)
+      .map((servidor) => ({ grupo, servidor }))
     ).sort((a, b) => nomeCurtoServidor(a.servidor).localeCompare(nomeCurtoServidor(b.servidor), "pt-BR"));
     tbody.innerHTML = membros.length ? membros.map(({ grupo, servidor }) => `
       <tr data-servidor-id="${esc(servidor.id)}" data-grupo-id="${esc(grupo.id)}">
@@ -2371,6 +2570,14 @@
         <td><div class="rec-mem-actions"><button class="rec-icon-btn rec-mem-edit" type="button" title="Editar">✎</button><span></span><button class="rec-icon-btn rec-mem-delete rec-delete" type="button" title="Remover">×</button></div></td>
       </tr>
     `).join("") : `<tr><td colspan="5">GRUPO SEM NOMES</td></tr>`;
+    tbody.querySelectorAll(".rec-mem-edit").forEach((btn) => {
+      btn.style.visibility = "hidden";
+      btn.disabled = true;
+    });
+    tbody.querySelectorAll(".rec-mem-delete").forEach((btn) => {
+      btn.textContent = "X";
+      btn.title = "Remover";
+    });
     atualizarOpcoesPresencaRecorrente();
   }
 
@@ -2595,9 +2802,6 @@
       if (grupo?.estados) delete grupo.estados[servidorId];
       const servidor = servidores.find((s) => s.id === servidorId);
       if (servidor) {
-        servidor.motivoapoio = "";
-        servidor.jornada = "";
-        servidor.horario = "";
         servidor.grupo = "";
       }
     });
@@ -2727,10 +2931,15 @@
       });
       renderMembrosRecorrentes(gruposSelecionadosRecorrentes());
     });
+    $("recNovoGrupo")?.addEventListener("click", abrirPopoverNovoGrupo);
     $("recGruposBody")?.addEventListener("click", (event) => {
       const row = event.target.closest("tr");
       const grupoId = txt(row?.dataset.grupoId);
       if (!grupoId) return;
+      if (event.target.closest(".rec-add-person")) {
+        abrirPopoverIncluirPessoasGrupo(grupoId);
+        return;
+      }
       if (event.target.closest(".rec-save-edit")) {
         salvarEdicaoGrupoRecorrente(row);
         return;

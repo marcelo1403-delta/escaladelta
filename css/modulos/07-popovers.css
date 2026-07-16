@@ -932,6 +932,24 @@
 
 .pop-recorrentes .rec-gap.h15{height:15px}
 
+.pop-recorrentes .rec-top-actions{
+  width:485px;
+  margin:0 7px;
+  display:flex;
+  justify-content:flex-start;
+}
+
+.pop-recorrentes .rec-new-group{
+  height:22px;
+  border:1px solid #86efac;
+  border-radius:3px;
+  background:#dcfce7;
+  color:#15803d;
+  font-size:9px;
+  font-weight:900;
+  padding:0 10px;
+}
+
 .pop-recorrentes label,
 .pop-recorrentes th,
 .pop-recorrentes td{
@@ -975,8 +993,8 @@
 }
 
 .pop-recorrentes .rec-grupos-table{
-  width:470px;
-  margin:0 15px;
+  width:485px;
+  margin:0 7px;
 }
 
 .pop-recorrentes #recTodosGrupos,
@@ -992,14 +1010,18 @@
 .pop-recorrentes .rec-col-motivo{width:105px}
 .pop-recorrentes .rec-col-jornada{width:85px}
 .pop-recorrentes .rec-col-horario{width:80px}
-.pop-recorrentes .rec-col-edicao{width:85px}
+.pop-recorrentes .rec-col-edicao{width:100px}
 
 .pop-recorrentes .rec-row-actions,
 .pop-recorrentes .rec-mem-actions{
   display:grid;
-  grid-template-columns:25px 20px 25px;
+  grid-template-columns:25px 25px 20px 25px;
   align-items:center;
   margin-left:6px;
+}
+
+.pop-recorrentes .rec-row-actions{
+  margin-left:0;
 }
 
 .pop-recorrentes .rec-icon-btn{
@@ -1025,6 +1047,12 @@
   border-color:#86efac;
   background:#dcfce7;
   color:#15803d;
+}
+
+.pop-recorrentes .rec-add-person{
+  border-color:#bfdbfe;
+  background:#eff6ff;
+  color:#1d4ed8;
 }
 
 .pop-recorrentes tr.is-pending td{

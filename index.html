@@ -632,20 +632,6 @@
 <span class="extra-nome-completo"></span>
 </div>
 </div>
-<div class="extra-line-gap h10"></div>
-<div class="extra-rec-row">
-<input id="extraRecorrente" type="checkbox"/>
-<label for="extraRecorrente">RECORRENTE</label>
-<span class="extra-rec-gap"></span>
-<label class="extra-grupo-label extra-grupo-field is-hidden" for="extraGrupoSelect">GRUPO</label>
-<select class="extra-grupo-field is-hidden" id="extraGrupoSelect"><option value="">GRUPO</option></select>
-<button class="extra-grupo-add extra-grupo-field is-hidden" id="extraGrupoAdd" type="button">+</button>
-</div>
-<div class="extra-grupo-desc is-hidden" id="extraGrupoDescricao"></div>
-<div class="extra-grupo-editor is-hidden" id="extraGrupoEditor">
-<input id="extraGrupoNome" placeholder="NOME DO GRUPO" type="text"/>
-<button id="extraGrupoSalvar" type="button" disabled title="Gravar grupo">▣</button>
-</div>
 <div class="extra-line-gap h15"></div>
 <div class="extra-pop-msg" id="extraPopMsg"></div>
 <div class="extra-actions"><button class="s01-save" type="button">GRAVAR</button><button class="s01-exit" type="button">SAIR</button></div>
@@ -655,6 +641,8 @@
 <div class="s01-popover pop-recorrentes" data-popover="extra-recorrentes" id="popoverExtraRecorrentes">
 <div class="s01-pop-title title-green rec-title"><span>PRESENCA EXTRA RECORRENTE</span><span></span><button class="s01-pop-close" type="button">×</button></div>
 <div class="s01-pop-body rec-body">
+<div class="rec-gap h15"></div>
+<div class="rec-top-actions"><button class="rec-new-group" id="recNovoGrupo" type="button">+ NOVO GRUPO</button></div>
 <div class="rec-gap h15"></div>
 <table class="rec-grupos-table">
 <colgroup><col class="rec-col-opcao"/><col class="rec-col-grupo"/><col class="rec-col-motivo"/><col class="rec-col-jornada"/><col class="rec-col-horario"/><col class="rec-col-edicao"/></colgroup>

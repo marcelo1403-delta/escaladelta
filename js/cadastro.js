@@ -1916,6 +1916,9 @@
     aplicarTodosRecorrentesPadraoEmServidores();
     popularGruposExtra();
     popularSelectGrupos($("svRecGrupo"), getVal("svRecGrupo"));
+    renderTable();
+    const servidorAtual = servidores.find((s) => s.id === getVal("svId"));
+    if (servidorAtual) fillForm(servidorAtual);
     atualizarPopoverRecorrentesAberto();
   }
 

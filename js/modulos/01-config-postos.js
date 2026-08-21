@@ -8,32 +8,30 @@ var postoRowsDefault=[
 ["4","P0","INATIVO","NAO","NAO","-","-","-","-","-","-","-","-"],
 ["5","P1","ATIVO","SIM","SIM","T2","5","SIM","NAO","T4","5","SIM","NAO"],
 ["6","P2","ATIVO","SIM","SIM","T2","3","SIM","NAO","T4","3","SIM","NAO"],
-["7","T1","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
-["8","T2","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
-["9","T3","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
-["10","T4","ATIVO","NAO","SIM","T2","1","NAO","SIM","T4","1","NAO","SIM"],
+["7","T1","ATIVO","NAO","SIM","T2","1","SIM","NAO","T4","1","SIM","NAO"],
+["8","T2","ATIVO","NAO","SIM","T2","1","SIM","NAO","T4","1","SIM","NAO"],
+["9","T3","ATIVO","NAO","SIM","T2","1","SIM","NAO","T4","1","SIM","NAO"],
+["10","T4","ATIVO","NAO","SIM","T2","1","SIM","NAO","T4","1","SIM","NAO"],
 ["11","VIV. ALFA","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["12","VIV. BRAVO","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["13","VIV. CHARLIE","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["14","VIV. DELTA","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["15","IN/TR/SAU","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"]
 ];
-var POSTOS_FPN_OCULTOS=new Set(["T1","T2","T3","T4"]);
 var sanitizarPostoRowSemFpn=(row)=>{
   if(!Array.isArray(row))return row;
-  var fpnOnly=(row[7]!=="SIM"&&row[8]==="SIM")||(row[11]!=="SIM"&&row[12]==="SIM");
-  if(POSTOS_FPN_OCULTOS.has(normPostoCfg(row[1]))||fpnOnly){
-    row[2]="INATIVO";
+  if(["T1","T2","T3","T4"].includes(normPostoCfg(row[1]))){
+    row[2]="ATIVO";
     row[3]="NAO";
-    row[4]="NAO";
-    row[5]="-";
-    row[6]="-";
-    row[7]="-";
-    row[8]="-";
-    row[9]="-";
-    row[10]="-";
-    row[11]="-";
-    row[12]="-";
+    row[4]="SIM";
+    row[5]=row[5]==="-"?"T2":row[5];
+    row[6]=row[6]==="-"?"1":row[6];
+    row[7]="SIM";
+    row[8]="NAO";
+    row[9]=row[9]==="-"?"T4":row[9];
+    row[10]=row[10]==="-"?"1":row[10];
+    row[11]="SIM";
+    row[12]="NAO";
     return row;
   }
   row[8]=row[5]==="-"?"-":"NAO";
@@ -47,7 +45,7 @@ var makeTabSelect=(options,value)=>`<select class="cfg-tab">${options.map((optio
 var makeVagasSelect=(value,tab)=>`<select class="cfg-vagas"${tab==="-"?" disabled":""}>${["-",...Array.from({length:12},(_,i)=>String(i+1))].map((option)=>`<option${option===String(value)?" selected":""}>${option}</option>`).join("")}</select>`;
 var makePermSelect=(value,tab)=>`<select class="cfg-permitido"${tab==="-"?" disabled":""}>${["-","SIM","NAO"].map((option)=>`<option${option===value?" selected":""}>${option}</option>`).join("")}</select>`;
 var renderConfigPostos=()=>{
-  document.getElementById("configPostosBody").innerHTML=postoRows.filter((row)=>!POSTOS_FPN_OCULTOS.has(normPostoCfg(row[1]))).map((row)=>`<tr data-id="${row[0]}" class="${row[2]==="INATIVO"?"is-inativo":""} ${row[4]==="NAO"?"is-nao-visivel":""}"><td>${row[0].padStart(2,"0")}</td><td>${row[1]}</td><td>${makeSelect(["ATIVO","INATIVO"],row[2])}</td><td>${makeSelect(["SIM","NAO"],row[3])}</td><td>${makeSelect(["SIM","NAO"],row[4])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T2","T3"],row[5])}</td><td>${makeVagasSelect(row[6],row[5])}</td><td>${makePermSelect(row[7],row[5])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T4","T5"],row[9])}</td><td>${makeVagasSelect(row[10],row[9])}</td><td>${makePermSelect(row[11],row[9])}</td></tr>`).join("");
+  document.getElementById("configPostosBody").innerHTML=postoRows.map((row)=>`<tr data-id="${row[0]}" class="${row[2]==="INATIVO"?"is-inativo":""} ${row[4]==="NAO"?"is-nao-visivel":""}"><td>${row[0].padStart(2,"0")}</td><td>${row[1]}</td><td>${makeSelect(["ATIVO","INATIVO"],row[2])}</td><td>${makeSelect(["SIM","NAO"],row[3])}</td><td>${makeSelect(["SIM","NAO"],row[4])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T2","T3"],row[5])}</td><td>${makeVagasSelect(row[6],row[5])}</td><td>${makePermSelect(row[7],row[5])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T4","T5"],row[9])}</td><td>${makeVagasSelect(row[10],row[9])}</td><td>${makePermSelect(row[11],row[9])}</td></tr>`).join("");
 };
 renderConfigPostos();
 var syncPermissaoPostosRow=(tr)=>{

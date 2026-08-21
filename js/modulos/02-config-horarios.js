@@ -11,6 +11,24 @@ var horarioPanel=()=>popoverConfigEscalas?.querySelector("[data-config-panel='ho
 var horContexto=()=>configHorarioDefs[configHorarioAtivo];
 var horariosRegistros=[];
 var horariosSeq=1;
+var setModoHorarioForm=(modo)=>{horarioPanel()?.setAttribute("data-horario-modo",modo);};
+var modoHorarioForm=()=>horarioPanel()?.getAttribute("data-horario-modo")||"editar";
+var proximoHorarioSeq=()=>{
+  var max=0;
+  horariosRegistros.forEach((registro)=>{
+    var n=Number(String(registro?.id||"").replace(/\D/g,""));
+    if(Number.isFinite(n))max=Math.max(max,n);
+  });
+  horariosSeq=Math.max(Number(horariosSeq)||1,max+1);
+  return horariosSeq++;
+};
+var gerarHorarioId=()=>{
+  var id="";
+  do{
+    id=`HD${String(proximoHorarioSeq()).padStart(3,"0")}`;
+  }while(horariosRegistros.some((registro)=>registro.id===id));
+  return id;
+};
 var minHora=(value)=>{const [h,m]=String(value||"").split(":").map(Number);return ((h||0)*60)+(m||0);};
 var horaMin=(value)=>`${String(Math.floor((value%(24*60))/(60))).padStart(2,"0")}:${String(value%60).padStart(2,"0")}`;
 var duracaoTurno=(ini,fim)=>{const a=minHora(ini);let b=minHora(fim);if(b<=a)b+=24*60;return b-a;};
@@ -58,6 +76,14 @@ var lerHorForm=()=>{
   var base=horDefault(configHorarioAtivo);
   return {...base,id:document.getElementById("horId")?.value||"",inicio:document.getElementById("horInicio")?.value||"",fim:document.getElementById("horFim")?.value||"",colunas:Number(document.getElementById("horColunas")?.value||0),grupos:Number(document.getElementById("horGrupos")?.value||0),filhos};
 };
+var normalizarFilhosIdMae=(registro)=>{
+  registro.filhos=(Array.isArray(registro.filhos)?registro.filhos:[]).map((filho,index)=>({
+    ...filho,
+    id:String(filho.id||index+1).padStart(2,"0"),
+    idMae:registro.id
+  }));
+  return registro;
+};
 var gerarFilhosCalculados=(registro)=>{
   var total=Number(registro.colunas)||0;
   var grupos=Number(registro.grupos)||1;
@@ -78,6 +104,10 @@ var filhosStringParaObjeto=(filhos=[],idMae="")=>filhos.map((f,index)=>{
   var fim=mid>0?str.slice(mid+1):"";
   return {id:String(index+1).padStart(2,"0"),idMae,grupo:"1",inicio,fim};
 });
+var registrosFromPaisFilhosHorarios=(pais=[],filhos=[])=>Array.isArray(pais)?pais.map((pai)=>({
+  ...pai,
+  filhos:filhosStringParaObjeto((Array.isArray(filhos)?filhos:[]).filter((filho)=>String(filho?.idMae||"")===String(pai?.id||"")),pai?.id||"")
+})):[];
 // Complementa cadastroHorarios do estado com defaults da matriz para slots sem registro atual.
 // Garante que T2-T5 nunca fiquem sem horário ao carregar escala existente.
 var complementarHorariosComMatriz=(estado,matriz)=>{
@@ -91,7 +121,7 @@ var complementarHorariosComMatriz=(estado,matriz)=>{
   ];
   var complementos=[];
   SLOTS.forEach((slot)=>{
-    var temAtual=registros.some((r)=>r.atual&&normResp(r.setor)===slot.setor&&normResp(r.turno)===slot.turno);
+    var temAtual=registros.some((r)=>(r.atual||r.default)&&normResp(r.setor)===slot.setor&&normResp(r.turno)===slot.turno);
     if(temAtual)return;
     var def=matriz.horariosDefault.find((h)=>normResp(h.setor)===slot.setor&&normResp(h.turno)===slot.turno);
     if(!def)return;
@@ -128,6 +158,7 @@ var atualizarZebraHorFilhos=()=>{
   });
 };
 var preencherHorForm=(registro,enabled=false)=>{
+  setModoHorarioForm(registro.id?"editar":"novo");
   popularHorSelects();
   document.getElementById("horId").value=registro.id||"";
   document.getElementById("horInicio").value=registro.inicio||"";
@@ -139,6 +170,7 @@ var preencherHorForm=(registro,enabled=false)=>{
   document.getElementById("horRemover").disabled=!(enabled&&registro.id);
 };
 var limparHorForm=()=>{
+  setModoHorarioForm("editar");
   var base=horDefault(configHorarioAtivo);
   popularHorSelects();
   document.getElementById("horId").value="";
@@ -154,14 +186,14 @@ var limparHorForm=()=>{
   document.getElementById("horRemover").disabled=true;
 };
 var registrosContexto=()=>{const base=horDefault(configHorarioAtivo);return horariosRegistros.filter((r)=>r.setor===base.setor&&r.turno===base.turno);};
-var horarioAtualContexto=()=>registrosContexto().find((r)=>r.atual)||registrosContexto()[0]||null;
+var horarioAtualContexto=()=>registrosContexto().find((r)=>r.atual||r.default)||registrosContexto()[0]||null;
 var marcarHorMaeSelecionada=(id)=>{
   document.querySelectorAll("#horMaeBody tr").forEach((row)=>row.classList.toggle("is-selected",Boolean(id)&&row.dataset.id===id));
 };
 var renderHorMae=()=>{
   var tbody=document.getElementById("horMaeBody");
   if(!tbody)return;
-  tbody.innerHTML=registrosContexto().map((r)=>`<tr data-id="${r.id}"><td><input type="radio" name="horAtual-${r.setor}-${r.turno}" ${r.atual?"checked":""}></td><td>${r.id}</td><td>${r.setor}</td><td>${r.turno}</td><td>${r.grupos}</td><td>${r.inicio}</td><td>${r.fim}</td></tr>`).join("");
+  tbody.innerHTML=registrosContexto().map((r)=>`<tr data-id="${r.id}"><td><input type="radio" name="horAtual-${r.setor}-${r.turno}" ${r.atual||r.default?"checked":""}></td><td>${r.id}</td><td>${r.setor}</td><td>${r.turno}</td><td>${r.grupos}</td><td>${r.inicio}</td><td>${r.fim}</td></tr>`).join("");
 };
 var ultimoBloqueioEstruturaEscala="";
 var aplicarEstruturaSemConfirmar=false;
@@ -169,14 +201,14 @@ var aplicarHorariosAtuais=()=>{
   ultimoBloqueioEstruturaEscala="";
   for(var key of ["postos-diurno","postos-noturno","vivencias-diurno","vivencias-noturno"]){
     var base=horDefault(key);
-    var atual=horariosRegistros.find((r)=>r.atual&&r.setor===base.setor&&r.turno===base.turno);
+    var atual=horariosRegistros.find((r)=>(r.atual||r.default)&&r.setor===base.setor&&r.turno===base.turno);
     if(!aplicarHorarioAtual(atual||horDefaultComFilhos(key),{dryRun:true}))return false;
   }
   aplicarEstruturaSemConfirmar=true;
   try{
     for(var key of ["postos-diurno","postos-noturno","vivencias-diurno","vivencias-noturno"]){
       var base=horDefault(key);
-      var atual=horariosRegistros.find((r)=>r.atual&&r.setor===base.setor&&r.turno===base.turno);
+      var atual=horariosRegistros.find((r)=>(r.atual||r.default)&&r.setor===base.setor&&r.turno===base.turno);
       if(!aplicarHorarioAtual(atual||horDefaultComFilhos(key)))return false;
     }
   }finally{
@@ -463,7 +495,16 @@ var pedirCodigoPopover=(onOk)=>{
 };
 var cloneHorarioMatriz=(registro)=>({
   ...registro,
+  atual:Boolean(registro.atual||registro.default),
+  default:Boolean(registro.atual||registro.default),
   filhos:Array.isArray(registro.filhos)?registro.filhos.map((filho)=>typeof filho==="object"?{...filho}:filho):[]
+});
+var filhosComparaveis=(filhos=[])=>filhos.map((filho)=>({...filho,idMae:""}));
+var tabelasPaiFilhoHorarios=(registros=[])=>({
+  pais:registros.map(({filhos,...pai})=>({...pai})),
+  filhos:registros.flatMap((registro)=>Array.isArray(registro.filhos)
+    ? registro.filhos.map((filho,index)=>({...filho,id:filho.id||String(index+1).padStart(2,"0"),idMae:registro.id}))
+    : [])
 });
 var salvarHorariosMatrizDados=async()=>{
   var firebase=await aguardarFirebaseSync(4000);
@@ -471,6 +512,7 @@ var salvarHorariosMatrizDados=async()=>{
   var matrizBase=await carregarMatrizDados();
   if(!matrizBase)return {ok:false,msg:""};
   var registros=horariosRegistros.map(cloneHorarioMatriz);
+  var tabelas=tabelasPaiFilhoHorarios(registros);
   var matriz={
     ...matrizBase,
     versao:Number(matrizBase?.versao||1),
@@ -478,9 +520,11 @@ var salvarHorariosMatrizDados=async()=>{
     salvoEm:new Date().toISOString(),
     cadastroHorarios:{
       seq:horariosSeq,
-      registros
+      registros,
+      pais:tabelas.pais,
+      filhos:tabelas.filhos
     },
-    horariosDefault:registros.filter((registro)=>registro.atual).map(cloneHorarioMatriz)
+    horariosDefault:registros.filter((registro)=>registro.atual||registro.default).map(cloneHorarioMatriz)
   };
   try{
     var result=await firebase.salvar(matriz,MATRIZ_DOC_ID,{status:"aberto"});
@@ -490,8 +534,19 @@ var salvarHorariosMatrizDados=async()=>{
     return {ok:false,msg:""};
   }
 };
+var iniciarNovoHorario=()=>{
+  var registro=horDefaultComFilhos(configHorarioAtivo);
+  registro.id="";
+  registro.atual=false;
+  registro.default=false;
+  preencherHorForm(registro,true);
+  setModoHorarioForm("novo");
+  marcarHorMaeSelecionada("");
+};
 var gravarHorario=async()=>{
   var r=lerHorForm();
+  var forcarInsert=modoHorarioForm()==="novo";
+  if(forcarInsert)r.id="";
   if(!horaValida(r.inicio)){popMsg("Preencha o campo Início do turno com um horário válido (HH:MM).");return;}
   if(!horaValida(r.fim)){popMsg("Preencha o campo Fim do turno com um horário válido (HH:MM).");return;}
   if(!r.colunas||r.colunas<1){popMsg("Selecione o Nº de colunas.");return;}
@@ -503,17 +558,23 @@ var gravarHorario=async()=>{
     if(!horaValida(filho.inicio)){popMsg(`O campo H. INICIO linha ${String(index+1).padStart(2,"0")} está vazio, preencha para prosseguir.`);return;}
     if(!horaValida(filho.fim)){popMsg(`O campo H.FIM linha ${String(index+1).padStart(2,"0")} está vazio, preencha para prosseguir.`);return;}
   }
-  if(horariosRegistros.some((item)=>item.id!==r.id&&item.setor===r.setor&&item.turno===r.turno&&item.inicio===r.inicio&&item.fim===r.fim&&item.colunas===r.colunas&&item.grupos===r.grupos&&JSON.stringify(item.filhos)===JSON.stringify(r.filhos))){
+  if(horariosRegistros.some((item)=>item.id!==r.id&&item.setor===r.setor&&item.turno===r.turno&&item.inicio===r.inicio&&item.fim===r.fim&&item.colunas===r.colunas&&item.grupos===r.grupos&&JSON.stringify(filhosComparaveis(item.filhos))===JSON.stringify(filhosComparaveis(r.filhos)))){
     popMsg("Esse horario já existe!");
     return;
   }
-  var novo=!r.id;
+  var novo=forcarInsert||!r.id;
   var anteriores=horariosRegistros.map((item)=>({...item,filhos:Array.isArray(item.filhos)?item.filhos.map((filho)=>({...filho})):[]}));
   var seqAnterior=horariosSeq;
-  if(novo)r.id=String(horariosSeq++).padStart(3,"0");
+  if(novo)r.id=gerarHorarioId();
+  normalizarFilhosIdMae(r);
   var index=horariosRegistros.findIndex((item)=>item.id===r.id);
-  if(index>=0)r.atual=Boolean(horariosRegistros[index].atual);
-  else r.atual=!registrosContexto().some((item)=>item.atual);
+  if(index>=0){
+    r.atual=Boolean(horariosRegistros[index].atual||horariosRegistros[index].default);
+    r.default=r.atual;
+  }else{
+    r.atual=!registrosContexto().some((item)=>item.atual||item.default);
+    r.default=r.atual;
+  }
   if(index>=0)horariosRegistros[index]=r;else horariosRegistros.push(r);
   if(!aplicarHorariosAtuais()){
     horariosRegistros=anteriores;
@@ -522,6 +583,9 @@ var gravarHorario=async()=>{
     return;
   }
   renderConfigHorario(configHorarioAtivo);
+  preencherHorForm(r,true);
+  setModoHorarioForm("editar");
+  marcarHorMaeSelecionada(r.id);
   var result=await salvarHorariosMatrizDados();
   if(result.ok)popMsg(`Horario ${novo?"criado":"alterado"} com sucesso e gravado na matriz-dados.`);
   else popMsg(`Horario ${novo?"criado":"alterado"} nesta tela.`);
@@ -549,7 +613,7 @@ var removerHorario=()=>{
   p.querySelector(".s03-clear-exit").addEventListener("click",()=>p.remove());
 };
 popoverConfigEscalas?.querySelectorAll("[data-horario-config]").forEach((btn)=>btn.addEventListener("click",()=>renderConfigHorario(btn.dataset.horarioConfig)));
-document.getElementById("horNovo")?.addEventListener("click",()=>preencherHorForm(horDefaultComFilhos(configHorarioAtivo),true));
+document.getElementById("horNovo")?.addEventListener("click",iniciarNovoHorario);
 document.getElementById("horGravar")?.addEventListener("click",gravarHorario);
 document.getElementById("horRemover")?.addEventListener("click",removerHorario);
 popoverConfigEscalas?.querySelector("[data-config-panel='postos'] .config-save")?.addEventListener("click",aplicarConfigPostos);
@@ -571,14 +635,14 @@ document.getElementById("horFilhosBody")?.addEventListener("change",(event)=>{
   if(event.target.matches(".hor-time-input"))aplicarMascaraHora(event.target);
   if(event.target.matches("select"))atualizarZebraHorFilhos();
 });
-document.getElementById("horMaeBody")?.addEventListener("click",(event)=>{
+document.getElementById("horMaeBody")?.addEventListener("click",async(event)=>{
   var tr=event.target.closest("tr");
   if(!tr)return;
   var r=horariosRegistros.find((item)=>item.id===tr.dataset.id);
   if(!r)return;
   if(event.target.type==="radio"){
     var anteriores=horariosRegistros.map((item)=>({...item,filhos:Array.isArray(item.filhos)?item.filhos.map((filho)=>({...filho})):[]}));
-    registrosContexto().forEach((item)=>{item.atual=item.id===r.id;});
+    registrosContexto().forEach((item)=>{item.atual=item.id===r.id;item.default=item.atual;});
     if(!aplicarHorarioAtual(r)){
       horariosRegistros=anteriores;
       renderHorMae();
@@ -588,9 +652,11 @@ document.getElementById("horMaeBody")?.addEventListener("click",(event)=>{
     renderHorMae();
     preencherHorForm(r,true);
     marcarHorMaeSelecionada(r.id);
+    await salvarHorariosMatrizDados();
     return;
   }
   document.querySelectorAll("#horMaeBody tr").forEach((row)=>row.classList.toggle("is-selected",row===tr));
   preencherHorForm(r,true);
+  setModoHorarioForm("editar");
 });
 renderConfigHorario();

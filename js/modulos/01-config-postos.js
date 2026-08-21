@@ -1,5 +1,6 @@
 /* Módulo extraído de js/sandbox.js original. Carregue na ordem definida no index.html. */
 var POSTO_IDX={id:0,nome:1,status:2,chefia:3,visivel:4,diaTab:5,diaVagas:6,diaPpf:7,diaFpn:8,noiteTab:9,noiteVagas:10,noitePpf:11,noiteFpn:12};
+var normPostoCfg=(value)=>String(value||"").replace(/\s+/g," ").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 var postoRowsDefault=[
 ["1","CHEFE DE PLANTAO","ATIVO","SIM","SIM","-","-","-","-","-","-","-","-"],
 ["2","CHEFE ADJUNTO","ATIVO","SIM","SIM","-","-","-","-","-","-","-","-"],
@@ -17,34 +18,53 @@ var postoRowsDefault=[
 ["14","VIV. DELTA","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"],
 ["15","IN/TR/SAU","ATIVO","SIM","SIM","T3","10","SIM","NAO","T5","2","SIM","NAO"]
 ];
-var clonarPostoRowsDefault=()=>postoRowsDefault.map((row)=>[...row]);
+var POSTOS_FPN_OCULTOS=new Set(["T1","T2","T3","T4"]);
+var sanitizarPostoRowSemFpn=(row)=>{
+  if(!Array.isArray(row))return row;
+  var fpnOnly=(row[7]!=="SIM"&&row[8]==="SIM")||(row[11]!=="SIM"&&row[12]==="SIM");
+  if(POSTOS_FPN_OCULTOS.has(normPostoCfg(row[1]))||fpnOnly){
+    row[2]="INATIVO";
+    row[3]="NAO";
+    row[4]="NAO";
+    row[5]="-";
+    row[6]="-";
+    row[7]="-";
+    row[8]="-";
+    row[9]="-";
+    row[10]="-";
+    row[11]="-";
+    row[12]="-";
+    return row;
+  }
+  row[8]=row[5]==="-"?"-":"NAO";
+  row[12]=row[9]==="-"?"-":"NAO";
+  return row;
+};
+var clonarPostoRowsDefault=()=>postoRowsDefault.map((row)=>sanitizarPostoRowSemFpn([...row]));
 var postoRows=clonarPostoRowsDefault();
 var makeSelect=(options,value)=>`<select>${options.map((option)=>`<option${option===value?" selected":""}>${option}</option>`).join("")}</select>`;
 var makeTabSelect=(options,value)=>`<select class="cfg-tab">${options.map((option)=>`<option${option===value?" selected":""}>${option}</option>`).join("")}</select>`;
 var makeVagasSelect=(value,tab)=>`<select class="cfg-vagas"${tab==="-"?" disabled":""}>${["-",...Array.from({length:12},(_,i)=>String(i+1))].map((option)=>`<option${option===String(value)?" selected":""}>${option}</option>`).join("")}</select>`;
 var makePermSelect=(value,tab)=>`<select class="cfg-permitido"${tab==="-"?" disabled":""}>${["-","SIM","NAO"].map((option)=>`<option${option===value?" selected":""}>${option}</option>`).join("")}</select>`;
 var renderConfigPostos=()=>{
-  document.getElementById("configPostosBody").innerHTML=postoRows.map((row)=>`<tr data-id="${row[0]}" class="${row[2]==="INATIVO"?"is-inativo":""} ${row[4]==="NAO"?"is-nao-visivel":""}"><td>${row[0].padStart(2,"0")}</td><td>${row[1]}</td><td>${makeSelect(["ATIVO","INATIVO"],row[2])}</td><td>${makeSelect(["SIM","NAO"],row[3])}</td><td>${makeSelect(["SIM","NAO"],row[4])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T2","T3"],row[5])}</td><td>${makeVagasSelect(row[6],row[5])}</td><td>${makePermSelect(row[7],row[5])}</td><td>${makePermSelect(row[8],row[5])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T4","T5"],row[9])}</td><td>${makeVagasSelect(row[10],row[9])}</td><td>${makePermSelect(row[11],row[9])}</td><td>${makePermSelect(row[12],row[9])}</td></tr>`).join("");
+  document.getElementById("configPostosBody").innerHTML=postoRows.filter((row)=>!POSTOS_FPN_OCULTOS.has(normPostoCfg(row[1]))).map((row)=>`<tr data-id="${row[0]}" class="${row[2]==="INATIVO"?"is-inativo":""} ${row[4]==="NAO"?"is-nao-visivel":""}"><td>${row[0].padStart(2,"0")}</td><td>${row[1]}</td><td>${makeSelect(["ATIVO","INATIVO"],row[2])}</td><td>${makeSelect(["SIM","NAO"],row[3])}</td><td>${makeSelect(["SIM","NAO"],row[4])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T2","T3"],row[5])}</td><td>${makeVagasSelect(row[6],row[5])}</td><td>${makePermSelect(row[7],row[5])}</td><td class="posto-gap-cell"></td><td>${makeTabSelect(["-","T4","T5"],row[9])}</td><td>${makeVagasSelect(row[10],row[9])}</td><td>${makePermSelect(row[11],row[9])}</td></tr>`).join("");
 };
 renderConfigPostos();
 var syncPermissaoPostosRow=(tr)=>{
   var selects=Array.from(tr.querySelectorAll("select"));
-  [[3,4,5,6],[7,8,9,10]].forEach(([tabIndex,vagasIndex,ppfIndex,fpnIndex])=>{
+  [[3,4,5],[6,7,8]].forEach(([tabIndex,vagasIndex,ppfIndex])=>{
     var tab=selects[tabIndex];
     var vagas=selects[vagasIndex];
     var ppf=selects[ppfIndex];
-    var fpn=selects[fpnIndex];
-    if(!tab||!vagas||!ppf||!fpn)return;
+    if(!tab||!vagas||!ppf)return;
     var off=tab.value==="-";
-    [vagas,ppf,fpn].forEach((select)=>{select.disabled=off;});
+    [vagas,ppf].forEach((select)=>{select.disabled=off;});
     if(off){
       vagas.value="-";
       ppf.value="-";
-      fpn.value="-";
     }else{
       if(vagas.value==="-")vagas.value="1";
       if(ppf.value==="-")ppf.value="SIM";
-      if(fpn.value==="-")fpn.value="NAO";
     }
   });
 };
@@ -74,7 +94,7 @@ var normalizarConfigPostoRow=(saved)=>{
         row[fpnIndex]="-";
       }
     });
-    return row;
+    return sanitizarPostoRowSemFpn(row);
   }
   var row=[...base];
   if(Array.isArray(saved)){
@@ -82,7 +102,7 @@ var normalizarConfigPostoRow=(saved)=>{
     row[3]=String(saved[3]||row[3]);
     row[4]=String(saved[4]||row[4]);
   }
-  return row;
+  return sanitizarPostoRowSemFpn(row);
 };
 var aplicarConfigPostosSalva=(lista)=>{
   if(!Array.isArray(lista))return false;
@@ -102,10 +122,12 @@ var aplicarConfigPostosSalva=(lista)=>{
 var aplicarHorariosMatrizSalva=(matriz)=>{
   var registros=Array.isArray(matriz?.cadastroHorarios?.registros)&&matriz.cadastroHorarios.registros.length
     ? matriz.cadastroHorarios.registros
-    : Array.isArray(matriz?.horariosDefault)?matriz.horariosDefault:[];
+    : Array.isArray(matriz?.cadastroHorarios?.pais)&&matriz.cadastroHorarios.pais.length
+      ? registrosFromPaisFilhosHorarios(matriz.cadastroHorarios.pais,matriz.cadastroHorarios.filhos)
+      : Array.isArray(matriz?.horariosDefault)?matriz.horariosDefault:[];
   if(!registros.length)return false;
   horariosSeq=Number(matriz?.cadastroHorarios?.seq||horariosSeq||1)||1;
-  horariosRegistros=registros.map((r)=>({...r,filhos:filhosStringParaObjeto(Array.isArray(r.filhos)?r.filhos:[],r.id||"")}));
+  horariosRegistros=registros.map((r)=>({...r,atual:Boolean(r.atual||r.default),default:Boolean(r.atual||r.default),filhos:filhosStringParaObjeto(Array.isArray(r.filhos)?r.filhos:[],r.id||"")}));
   renderConfigHorario(configHorarioAtivo);
   aplicarHorariosAtuais();
   return true;
@@ -131,11 +153,11 @@ var vagasConfigPosto=(row,noturno=false)=>{
 };
 var forcasRemovidasConfigPosto=(antes,depois,noturno=false)=>{
   var base=noturno?11:7;
-  return ["PPF","FPN"].filter((forca,index)=>String(antes?.[base+index]||"") === "SIM" && String(depois?.[base+index]||"") !== "SIM");
+  return ["PPF"].filter((forca,index)=>String(antes?.[base+index]||"") === "SIM" && String(depois?.[base+index]||"") !== "SIM");
 };
 var forcasAdicionadasConfigPosto=(antes,depois,noturno=false)=>{
   var base=noturno?11:7;
-  return ["PPF","FPN"].filter((forca,index)=>String(antes?.[base+index]||"") !== "SIM" && String(depois?.[base+index]||"") === "SIM");
+  return ["PPF"].filter((forca,index)=>String(antes?.[base+index]||"") !== "SIM" && String(depois?.[base+index]||"") === "SIM");
 };
 var posicaoAlocacaoPostoTabela=(td,tableId,posto)=>celulasPostoTabela(tableId,posto).indexOf(td);
 var chefesProtegidosPostoTabela=(tableId,posto)=>Array.from(document.querySelectorAll(`#${tableId} tbody td:not(.posto-cell)`)).filter((td)=>(
@@ -203,28 +225,27 @@ var aplicarConfigPostos=async()=>{
   document.querySelectorAll("#configPostosBody tr").forEach((tr)=>{
     var row=postoRows.find((item)=>item[0]===tr.dataset.id);
     var selects=Array.from(tr.querySelectorAll("select"));
-    if(!row||selects.length<11)return;
+    if(!row||selects.length<9)return;
     row[2]=selects[0].value;
     row[3]=selects[1].value;
     row[4]=selects[2].value;
     row[5]=selects[3].value;
     row[6]=row[5]==="-"?"-":selects[4].value;
     row[7]=row[5]==="-"?"-":selects[5].value;
-    row[8]=row[5]==="-"?"-":selects[6].value;
+    row[8]=row[5]==="-"?"-":"NAO";
     if(row[5]!=="-"){
       if(row[6]==="-")row[6]="1";
       if(row[7]==="-")row[7]="SIM";
-      if(row[8]==="-")row[8]="NAO";
     }
-    row[9]=selects[7].value;
-    row[10]=row[9]==="-"?"-":selects[8].value;
-    row[11]=row[9]==="-"?"-":selects[9].value;
-    row[12]=row[9]==="-"?"-":selects[10].value;
+    row[9]=selects[6].value;
+    row[10]=row[9]==="-"?"-":selects[7].value;
+    row[11]=row[9]==="-"?"-":selects[8].value;
+    row[12]=row[9]==="-"?"-":"NAO";
     if(row[9]!=="-"){
       if(row[10]==="-")row[10]="1";
       if(row[11]==="-")row[11]="SIM";
-      if(row[12]==="-")row[12]="NAO";
     }
+    sanitizarPostoRowSemFpn(row);
   });
   if(!await confirmarImpactosConfigPostos(postoRowsAntes,postoRows)){
     postoRows=postoRowsAntes;

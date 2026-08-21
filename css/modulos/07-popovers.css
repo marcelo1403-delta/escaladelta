@@ -2015,31 +2015,22 @@
   border-color:#cbd5e1;
 }
 
+.config-postos-table thead tr:last-child th:nth-child(11),
 .config-postos-table thead tr:last-child th:nth-child(12),
-.config-postos-table thead tr:last-child th:nth-child(13),
-.config-postos-table tbody td:nth-child(12),
-.config-postos-table tbody td:nth-child(13){
+.config-postos-table tbody td:nth-child(11),
+.config-postos-table tbody td:nth-child(12){
   background:#fff;
   color:#334155;
   border-color:#cbd5e1;
 }
 
 .config-postos-table thead tr:last-child th:nth-child(9),
-.config-postos-table thead tr:last-child th:nth-child(14),
+.config-postos-table thead tr:last-child th:nth-child(13),
 .config-postos-table tbody td:nth-child(9),
-.config-postos-table tbody td:nth-child(14){
+.config-postos-table tbody td:nth-child(13){
   background:var(--ppf-ui-bg);
   color:var(--ppf-ui-text);
   border-color:var(--ppf-ui-border);
-}
-
-.config-postos-table thead tr:last-child th:nth-child(10),
-.config-postos-table thead tr:last-child th:nth-child(15),
-.config-postos-table tbody td:nth-child(10),
-.config-postos-table tbody td:nth-child(15){
-  background:var(--fpn-ui-bg);
-  color:var(--fpn-ui-text);
-  border-color:var(--fpn-ui-border);
 }
 
 .config-postos-table tbody td:nth-child(7) select,
@@ -2050,24 +2041,17 @@
 }
 
 .config-postos-table tbody td:nth-child(9) select,
-.config-postos-table tbody td:nth-child(14) select{
+.config-postos-table tbody td:nth-child(13) select{
   background:#eef4ff;
   color:var(--ppf-ui-text);
   border-color:var(--ppf-ui-border);
 }
 
-.config-postos-table tbody td:nth-child(12) select,
-.config-postos-table tbody td:nth-child(13) select{
+.config-postos-table tbody td:nth-child(11) select,
+.config-postos-table tbody td:nth-child(12) select{
   background:#fff;
   color:#334155;
   border-color:#cbd5e1;
-}
-
-.config-postos-table tbody td:nth-child(10) select,
-.config-postos-table tbody td:nth-child(15) select{
-  background:#fff0f0;
-  color:var(--fpn-ui-text);
-  border-color:var(--fpn-ui-border);
 }
 
 .config-interval-table .config-col-num{width:30px}

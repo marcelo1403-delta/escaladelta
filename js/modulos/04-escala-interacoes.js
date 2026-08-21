@@ -440,6 +440,7 @@ var turnoPermitidoTabela=(tableId,turno)=>{
   return true;
 };
 var nomesDropdownEscala=(tableId,forca)=>{
+  if(normResp(forca)==="FPN")return [];
   var rows=Array.isArray(window._efetivoAllRows)?window._efetivoAllRows:(Array.isArray(window._efetivoRows)?window._efetivoRows:[]);
   return rows.filter((row)=>row?.sit==="pres"&&normResp(row.forca)===normResp(forca)&&turnoPermitidoTabela(tableId,row.turno))
     .map((row)=>txtResp(row.nome))
@@ -451,19 +452,15 @@ var vagasForcaNoLocal=(tableId,local,forca)=>{
   var config=configPostoParaTabela(local,tableId);
   if(!config)return 0;
   if(forca==="PPF")return config.ppf==="SIM"?config.vagas:0;
-  if(forca==="FPN")return config.fpn==="SIM"?config.vagas:0;
   return 0;
 };
 var forcasDropdownCelulaEscala=(td)=>{
   var table=td?.closest("table");
   var local=localAlocacao(td);
   var salva=normResp(td?.dataset?.forca);
-  if(salva==="PPF"||salva==="FPN")return [salva];
+  if(salva==="PPF")return [salva];
   var ppf=vagasForcaNoLocal(table.id,local,"PPF");
-  var fpn=vagasForcaNoLocal(table.id,local,"FPN");
-  if(ppf>0&&fpn>0)return ["PPF","FPN"];
   if(ppf>0)return ["PPF"];
-  if(fpn>0)return ["FPN"];
   return [];
 };
 var opcoesDropdownEscala=(table,td)=>{

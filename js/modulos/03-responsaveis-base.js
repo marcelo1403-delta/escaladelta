@@ -19,8 +19,7 @@ var montarRespRowsPostos=()=>{
   var forcasResponsavel=(()=>{
     var forcas=[];
     if(posto[7]==="SIM"||posto[11]==="SIM")forcas.push("PPF");
-    if(posto[8]==="SIM"||posto[12]==="SIM")forcas.push("FPN");
-    if(!forcas.length&&normResp(posto[1])==="CHEFE DE PLANTAO")return ["PPF","FPN"];
+    if(!forcas.length&&normResp(posto[1])==="CHEFE DE PLANTAO")return ["PPF"];
     if(!forcas.length&&["CHEFE ADJUNTO","ARMARIA"].includes(normResp(posto[1])))return ["PPF"];
     return forcas;
   })();
@@ -55,6 +54,7 @@ var aplicarResponsaveisSalvos=(lista)=>{
   sincronizarResponsaveisComPostos();
   var savedMap=new Map();
   lista.forEach((item)=>{
+    if(normResp(item?.forca)==="FPN")return;
     var key=chaveResp(item);
     if(key)savedMap.set(key,item);
   });
@@ -294,6 +294,7 @@ var colunaAlocacao=(td)=>{
   return td.cellIndex;
 };
 var forcaPermitidaNoLocal=(tableId,local,forca)=>{
+  if(normResp(forca)==="FPN")return false;
   var config=configPostoParaTabela(local,tableId);
   if(!config)return false;
   return forca==="FPN"?config.fpn==="SIM":config.ppf==="SIM";
@@ -302,7 +303,7 @@ var forcaDoLocal=(tableId,local)=>{
   var config=configPostoParaTabela(local,tableId);
   if(!config)return "";
   var ppf=config.ppf==="SIM";
-  var fpn=config.fpn==="SIM";
+  var fpn=false;
   if(ppf&&fpn)return "PPF/FPN";
   if(ppf)return "PPF";
   if(fpn)return "FPN";
@@ -333,7 +334,7 @@ var celulaChefePosto=(td)=>{
 var celulaOcupadaEscala=(td)=>Boolean(nomeCelulaEscala(td));
 var escResp=(value)=>txtResp(value).replace(/[&<>"]/g,(ch)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
 var htmlAlocado=(nome)=>`<div class="s03-alocado"><span class="s03-alocado-nome">${escResp(nome)}</span><span class="s03-alocado-actions"><button type="button" data-s03-cell-action="clear" title="Limpar">⌫</button><button type="button" data-s03-cell-action="move" title="Mover">✥</button><button type="button" data-s03-cell-action="copy" title="Copiar">⧉</button></span></div>`;
-var forcaAtivaEscala=()=>document.body.classList.contains("force-fpn")?"FPN":"PPF";
+var forcaAtivaEscala=()=>"PPF";
 var bloquearDrop=(td)=>{
   td.classList.add("s03-drop-blocked");
   setTimeout(()=>td.classList.remove("s03-drop-blocked"),700);

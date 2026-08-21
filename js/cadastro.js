@@ -41,6 +41,11 @@
   let recorrenteEstadoDataRef = null;
   const EXTRA_GRUPOS_KEY = "escala_extra_grupos_recorrentes";
 
+  function normalizarStatusForca(servidor) {
+    if (norm(servidor?.forca) === "FPN") servidor.status = "INATIVO";
+    return servidor;
+  }
+
   function lerDadosIniciais() {
     const tbody = $("svTbody");
     if (!tbody) return [];
@@ -53,12 +58,12 @@
       servidor.id = txt(row.dataset.id || servidor.id);
       servidor.status = servidor.status || "ATIVO";
       servidor.infoausencia = txt(servidor.infoausencia);
-      return servidor;
+      return normalizarStatusForca(servidor);
     });
   }
 
   function normalizarServidor(s) {
-    return {
+    return normalizarStatusForca({
       id: txt(s.id),
       matricula: txt(s.matricula),
       nome: txt(s.nome).toUpperCase(),
@@ -78,7 +83,7 @@
       id_pgto_permuta: txt(s.id_pgto_permuta),
       status_pgto: txt(s.status_pgto).toUpperCase(),
       grupo: nomeGrupo(s.grupo)
-    };
+    });
   }
 
   function prepararPermutasIniciais() {
@@ -738,7 +743,7 @@
 
     if (isInsert) {
       v.id = nextId();
-      v.status = "ATIVO";
+      v.status = norm(v.forca) === "FPN" ? "INATIVO" : "ATIVO";
       servidores.push(v);
     } else {
       const index = servidores.findIndex((s) => s.id === v.id);
@@ -746,7 +751,7 @@
         servidores[index] = v;
       } else {
         v.id = nextId();
-        v.status = "ATIVO";
+        v.status = norm(v.forca) === "FPN" ? "INATIVO" : "ATIVO";
         servidores.push(v);
       }
     }
@@ -846,7 +851,8 @@
 
   function forcaEfetivoAtiva() {
     const active = document.querySelector(".lp-force-btn.active");
-    return norm(active?.dataset.force || window._forcaAtiva || "PPF");
+    const forca = norm(active?.dataset.force || window._forcaAtiva || "PPF");
+    return forca === "FPN" ? "PPF" : forca;
   }
 
   function filtroEfetivoAtivo() {
@@ -1230,7 +1236,7 @@
     atualizarResumoForcas(plantao);
     const forcaAtiva = forcaEfetivoAtiva();
     const allRows = montarEfetivo(forcaAtiva, plantao);
-    window._efetivoAllRows = ["PPF", "FPN"].flatMap((forca) => montarEfetivo(forca, plantao));
+    window._efetivoAllRows = montarEfetivo("PPF", plantao);
     const rows = filtrarEfetivoRows(allRows, filtro);
     const alocacoes = alocacoesEfetivo();
     window._efetivoRows = rows;
@@ -2871,9 +2877,9 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll(".lp-force-btn").forEach((item) => item.classList.remove("active"));
         btn.classList.add("active");
-        window._forcaAtiva = norm(btn.dataset.force || "PPF");
+        window._forcaAtiva = norm(btn.dataset.force || "PPF") === "FPN" ? "PPF" : norm(btn.dataset.force || "PPF");
         document.body.classList.toggle("force-ppf", window._forcaAtiva === "PPF");
-        document.body.classList.toggle("force-fpn", window._forcaAtiva === "FPN");
+        document.body.classList.remove("force-fpn");
         renderEfetivo();
       });
     });

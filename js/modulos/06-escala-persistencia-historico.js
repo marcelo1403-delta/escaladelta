@@ -436,19 +436,22 @@ var aplicarEstadoPagina=(estado)=>{
   document.querySelectorAll(".lp-force-btn").forEach((btn)=>btn.classList.toggle("active",normResp(btn.dataset.force)===forca));
   window._forcaAtiva=forca;
   document.body.classList.toggle("force-ppf",forca==="PPF");
-  document.body.classList.toggle("force-fpn",forca==="FPN");
+  document.body.classList.remove("force-fpn");
   aplicarTurnoEscala("day");
   window._filtroEfetivoV9=estado.topo?.filtro||"presente";
   document.querySelectorAll(".srv-filtro-v9").forEach((btn)=>btn.classList.toggle("active",(btn.dataset.status||"").toLowerCase()===window._filtroEfetivoV9));
   var servidoresEstado=Array.isArray(estado.servidores)?estado.servidores:(Array.isArray(estado.efetivoView)?estado.efetivoView:[]);
   if(typeof window.importCadastroServidores==="function")window.importCadastroServidores(servidoresEstado);
   horariosSeq=Number(estado.cadastroHorarios?.seq||horariosSeq)||horariosSeq;
-  horariosRegistros=Array.isArray(estado.cadastroHorarios?.registros)?estado.cadastroHorarios.registros.map((r)=>({...r,filhos:filhosStringParaObjeto(Array.isArray(r.filhos)?r.filhos:[],r.id||"")})):[];
+  var registrosHorariosEstado=Array.isArray(estado.cadastroHorarios?.registros)&&estado.cadastroHorarios.registros.length
+    ? estado.cadastroHorarios.registros
+    : registrosFromPaisFilhosHorarios(estado.cadastroHorarios?.pais,estado.cadastroHorarios?.filhos);
+  horariosRegistros=Array.isArray(registrosHorariosEstado)?registrosHorariosEstado.map((r)=>({...r,atual:Boolean(r.atual||r.default),default:Boolean(r.atual||r.default),filhos:filhosStringParaObjeto(Array.isArray(r.filhos)?r.filhos:[],r.id||"")})):[];
   if(Array.isArray(estado.configPostos)){
     aplicarConfigPostosSalva(estado.configPostos);
   }
   renderConfigHorario(configHorarioAtivo);
-  if(horariosRegistros.some((r)=>r.atual))aplicarHorariosAtuais();
+  if(horariosRegistros.some((r)=>r.atual||r.default))aplicarHorariosAtuais();
   else{
     aplicarHorariosAtuais();
     aplicarHorariosEscala(estado.horarios||{});
@@ -708,20 +711,27 @@ var MATRIZ_KEYS_SERVIDOR=["id","matricula","nome","nomecurto","forca","status","
 var normalizarServidorMatriz=(servidor={})=>{
   var out={};
   MATRIZ_KEYS_SERVIDOR.forEach((key)=>{out[key]=servidor?.[key]??"";});
+  if(normResp(out.forca)==="FPN")out.status="INATIVO";
   return out;
 };
+var normalizarConfigPostosMatriz=(lista=[])=>lista.map((row)=>{
+  var out=Array.isArray(row)?[...row]:({...row});
+  return typeof sanitizarPostoRowSemFpn==="function"?sanitizarPostoRowSemFpn(out):out;
+});
 var matrizDadosFromEstado=(estado={},base={})=>({
   versao:Number(base?.versao||1),
   tipo:"matriz-dados",
   salvoEm:new Date().toISOString(),
   servidores:Array.isArray(estado.servidores)?estado.servidores.map(normalizarServidorMatriz):Array.isArray(base?.servidores)?base.servidores.map(normalizarServidorMatriz):[],
   responsaveisVersao:2,
-  responsaveis:Array.isArray(estado.responsaveis)?estado.responsaveis.map((r)=>({...r})):Array.isArray(base?.responsaveis)?base.responsaveis.map((r)=>({...r})):[],
-  configPostos:Array.isArray(estado.configPostos)?estado.configPostos.map((row)=>[...row]):Array.isArray(base?.configPostos)?base.configPostos.map((row)=>[...row]):[],
-  postosColunas:Array.isArray(base?.postosColunas)?base.postosColunas.map((row)=>Array.isArray(row)?[...row]:({...row})):[],
+  responsaveis:(Array.isArray(estado.responsaveis)?estado.responsaveis:Array.isArray(base?.responsaveis)?base.responsaveis:[]).filter((r)=>normResp(r?.forca)!=="FPN").map((r)=>({...r})),
+  configPostos:normalizarConfigPostosMatriz(Array.isArray(estado.configPostos)?estado.configPostos:Array.isArray(base?.configPostos)?base.configPostos:[]),
+  postosColunas:[],
   cadastroHorarios:{
     seq:Number(estado.cadastroHorarios?.seq||base?.cadastroHorarios?.seq||1),
-    registros:Array.isArray(estado.cadastroHorarios?.registros)?estado.cadastroHorarios.registros.map((r)=>({...r,filhos:Array.isArray(r.filhos)?r.filhos.map((f)=>({...f})):[]})):Array.isArray(base?.cadastroHorarios?.registros)?base.cadastroHorarios.registros.map((r)=>({...r,filhos:Array.isArray(r.filhos)?r.filhos.map((f)=>({...f})):[]})):[]
+    registros:Array.isArray(estado.cadastroHorarios?.registros)?estado.cadastroHorarios.registros.map((r)=>({...r,filhos:Array.isArray(r.filhos)?r.filhos.map((f)=>({...f})):[]})):Array.isArray(base?.cadastroHorarios?.registros)?base.cadastroHorarios.registros.map((r)=>({...r,filhos:Array.isArray(r.filhos)?r.filhos.map((f)=>({...f})):[]})):[],
+    pais:Array.isArray(estado.cadastroHorarios?.pais)?estado.cadastroHorarios.pais.map((p)=>({...p})):Array.isArray(base?.cadastroHorarios?.pais)?base.cadastroHorarios.pais.map((p)=>({...p})):[],
+    filhos:Array.isArray(estado.cadastroHorarios?.filhos)?estado.cadastroHorarios.filhos.map((f)=>({...f})):Array.isArray(base?.cadastroHorarios?.filhos)?base.cadastroHorarios.filhos.map((f)=>({...f})):[]
   },
   horariosDefault:Array.isArray(base?.horariosDefault)?base.horariosDefault.map((h)=>({...h,filhos:Array.isArray(h.filhos)?[...h.filhos]:[]})):[],
   extraRecorrentes:Array.isArray(estado.extraRecorrentes)?estado.extraRecorrentes.map((g)=>({...g,membros:Array.isArray(g.membros)?[...g.membros]:[]})):Array.isArray(base?.extraRecorrentes)?base.extraRecorrentes.map((g)=>({...g,membros:Array.isArray(g.membros)?[...g.membros]:[]})):[]

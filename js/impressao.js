@@ -34,14 +34,14 @@
       .imp-org{font-size:10px;font-weight:700;text-transform:uppercase}
       .imp-title{font-size:16px;font-weight:900;letter-spacing:.8px;text-align:center;text-transform:uppercase}
       .imp-meta{font-size:10px;font-weight:700}
-      .imp-top-frames{width:1046px;height:90px;display:grid;grid-template-columns:390px 90px 90px 198px 198px;gap:20px;margin:0 0 10px 0}
+      .imp-top-frames{width:828px;height:90px;display:grid;grid-template-columns:390px 90px 90px 198px;gap:20px;margin:0 0 10px 0}
       .imp-top-frame{height:90px;background:#fff;overflow:visible}
       .imp-frame-1{border:1px solid #111}
       .imp-frame-1{display:grid;grid-template-columns:120px 270px}
       .imp-list-top-frames{width:718px;height:90px;display:grid;grid-template-columns:378px 85px 85px 125px;gap:15px;margin:0 0 10px 0}
       .imp-list-frame-1{display:grid;grid-template-columns:115px 263px;border:1px solid #111}
       .imp-list-top-frames .imp-mini-card{width:85px}
-      .imp-list-chief-box{width:125px;height:90px}
+      .imp-list-chief-box{width:125px;height:57.5px}
       .imp-list-chief-title{height:25px;border:1px solid #508d60;background:#508d60;color:#fff;font-size:9px;font-weight:900;line-height:24px;text-align:center;text-transform:uppercase}
       .imp-list-chief-gap{height:10px}
       .imp-list-chief-row{height:22.5px;display:grid;grid-template-columns:40px 85px}
@@ -251,11 +251,6 @@
         chefe:responsavelView("ppf","CHEFE DE PLANTAO"),
         diurno:statForca("ppf",".stat-day"),
         noturno:statForca("ppf",".stat-night")
-      },
-      fpn:{
-        chefe:responsavelView("fpn","CHEFE DE PLANTAO"),
-        diurno:statForca("fpn",".stat-day"),
-        noturno:statForca("fpn",".stat-night")
       }
     };
   }
@@ -315,19 +310,6 @@
             <tr><td>${esc(dados.ppf.diurno)}</td><td>${esc(dados.ppf.noturno)}</td></tr>
           </tbody></table>
         </div>
-        <div class="imp-top-frame imp-frame-4 imp-frame-fpn">
-          <div class="imp-info-banner">FPN</div>
-          <div class="imp-card-gap"></div>
-          <div class="imp-info-row">
-            <div class="imp-info-row-title">CHEFE DE PLANTAO</div>
-            <div class="imp-info-row-body">${esc(dados.fpn.chefe)}</div>
-          </div>
-          <div class="imp-card-gap"></div>
-          <table class="imp-info-table"><tbody>
-            <tr><td class="imp-th">DIURNO</td><td class="imp-th">NOTURNO</td></tr>
-            <tr><td>${esc(dados.fpn.diurno)}</td><td>${esc(dados.fpn.noturno)}</td></tr>
-          </tbody></table>
-        </div>
       </div>`;
   }
 
@@ -363,11 +345,6 @@
           <div class="imp-list-chief-row ppf">
             <div class="imp-list-chief-label">PPF</div>
             <div class="imp-list-chief-value">${esc(dados.ppf.chefe)}</div>
-          </div>
-          <div class="imp-list-chief-gap"></div>
-          <div class="imp-list-chief-row fpn">
-            <div class="imp-list-chief-label">FPN</div>
-            <div class="imp-list-chief-value">${esc(dados.fpn.chefe)}</div>
           </div>
         </div>
       </div>`;
@@ -873,7 +850,6 @@
         .map(mapExtra)
     });
     const ppfDados = dados("ppf");
-    const fpnDados = dados("fpn");
     const topoHtml = topoListaPresenca();
     const gap10 = `<div class="imp-list-gap-10"></div>`;
     const gap20 = `<div class="imp-list-gap-20"></div>`;
@@ -948,7 +924,6 @@
     };
 
     addForca("PPF - POLICIA PENAL FEDERAL", "ppf", ppfDados);
-    addForca("FPN - FORCA PENITENCIARIA NACIONAL", "fpn", fpnDados);
     finishPage();
     return pages.join("\n");
   }
